@@ -33,7 +33,8 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
     
     @Override
     protected void configure(HttpSecurity httpSecurity) throws Exception {
-      	httpSecurity.csrf().disable().headers()
+      	httpSecurity.csrf().disable()
+      	   .headers()
            .addHeaderWriter(new StaticHeadersWriter("Access-Control-Allow-Origin", "http://localhost:3001"));
     }
    

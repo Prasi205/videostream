@@ -1,5 +1,7 @@
 package com.tm.videostream.controller;
 
+import javax.validation.Valid;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,9 +13,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.tm.videostream.entity.Roles;
-import com.tm.videostream.entity.User;
 import com.tm.videostream.exception.CustomStreamException;
+import com.tm.videostream.pojo.RoleRequestPOJO;
+import com.tm.videostream.pojo.UserRequestPOJO;
 import com.tm.videostream.request.SigninRequest;
 import com.tm.videostream.response.JwtResponsePOJO;
 import com.tm.videostream.service.UserService;
@@ -28,18 +30,21 @@ public class UserController {
 	@Autowired
 	private UserService userService;
 	
+	/**Handles the roll details saving process based on received request
+	 * @param roleDetails
+	 * @return String
+	 */
 	@PostMapping("/saveRollDetails")
-	public ResponseEntity<String> saveRollDetails(@RequestBody Roles roleDetails){
+	public ResponseEntity<String> saveRollDetails(@RequestBody @Valid RoleRequestPOJO roleRequestPojo){
 		logger.info("Received the request to save the roll details");
-		ResponseEntity<String> saveRollDetails;
 		try {
+			String saveRollDetails=userService.saveRollDetails(roleRequestPojo);
 			logger.info("Roll details saving requested is received");
-			saveRollDetails=userService.saveRollDetails(roleDetails);
+			return ResponseEntity.ok(saveRollDetails);
 		} catch (Exception e) {
 			logger.error("Unable to received roll saving request");
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Unable to received roll saving request");
 		}
-		return saveRollDetails;
 	}
 	
 	/**Handles the user details saving process based on the received request
@@ -47,24 +52,23 @@ public class UserController {
 	 * @return User
 	 */
 	@PostMapping("/saveuser")
-	public ResponseEntity<String> saveUserDetails(@RequestBody User user) {
+	public ResponseEntity<String> saveUserDetails(@RequestBody @Valid UserRequestPOJO userRequestPOJO) {
 		logger.info("Received request to save the user details");
-		ResponseEntity<String> saveUserDetails;;
 		try {
+			String saveUserDetails=userService.saveUserDetails(userRequestPOJO);
 			logger.info("User details are saved successfully");
-			saveUserDetails=userService.saveUserDetails(user);
+			return ResponseEntity.ok(saveUserDetails);
 		} catch (Exception e) {
 			logger.error("Unable to received the request");
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Unable to received user details saving request");
 		}
-		return saveUserDetails;
 	}
 		
 	/**Handles the generation of access and refresh tokens based on the received request
 	 * @param signinRequest
 	 * @return StreamResponsePOJO
 	 */
-	@PostMapping("/")
+	@PostMapping("/login")
 	public ResponseEntity<JwtResponsePOJO> generateTokens(@RequestBody SigninRequest signinRequest) {
 		logger.info("Received request to generate token");
 		ResponseEntity<JwtResponsePOJO> jwtresponsePojo;

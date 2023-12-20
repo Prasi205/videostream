@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,9 +21,12 @@ import org.springframework.web.client.RestTemplate;
 import com.tm.videostream.entity.Roles;
 import com.tm.videostream.entity.User;
 import com.tm.videostream.exception.CustomStreamException;
+import com.tm.videostream.pojo.RoleRequestPOJO;
+import com.tm.videostream.pojo.UserRequestPOJO;
 import com.tm.videostream.repository.RoleRepository;
 import com.tm.videostream.repository.UserRepository;
 import com.tm.videostream.request.SigninRequest;
+import com.tm.videostream.request.TokenPropertiesRequest;
 import com.tm.videostream.response.JwtResponsePOJO;
 import com.tm.videostream.service.UserService;
 
@@ -41,13 +45,13 @@ public class UserServiceImpl implements UserService,UserDetailsService{
 	private PasswordEncoder passwordEncoder;
 	
 	@Value("${jwt.secret}")
-	private String SECRET_KEY;
+	private String secretKey;
 	
 	@Value("${jwt.accessTokenValidity}")
-	private int ACCESS_TOKEN_VALIDITY;
+	private int accessTokenValidity;
 	
 	@Value("${jwt.refreshTokenValidity}")
-	private int REFRESH_TOKEN_VALIDITY;
+	private int refreshTokenValidity;
 	
 	/**This method is used to encoded the user password
 	 * @param password
@@ -67,15 +71,16 @@ public class UserServiceImpl implements UserService,UserDetailsService{
 	 * @param roles
 	 * @return String
 	 */
-	public ResponseEntity<String> saveRollDetails(Roles roles){
+	public String saveRollDetails(RoleRequestPOJO roleRequestPojo){
 		logger.info("Received request to save the role details");
 		try {
-			roles.setRoleName("ROLE_" + roles.getRoleName());
-			roleRepository.save(roles);
-			return ResponseEntity.ok("Roles details are added in database");
+			Roles saveRollDetails=new Roles();
+			saveRollDetails.setRoleName("ROLE_"+roleRequestPojo.getRoleName());
+			roleRepository.save(saveRollDetails);
+			return "Roles details are added in database";
 		} catch (Exception e) {
-			logger.info("Unable to save roll details in database");
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Unable to save roll details in database");
+			logger.error("Unable to save roll details in database");
+			return "Unable to save roll details in database";
 		}
 	}
 	
@@ -83,22 +88,23 @@ public class UserServiceImpl implements UserService,UserDetailsService{
 	 * @param user
 	 * @return String
 	 */
-	public ResponseEntity<String> saveUserDetails(User user) {
+	public String saveUserDetails(UserRequestPOJO userRequestPOJO) {
 		logger.info("Received request to save the user details in database");
 		try {
 			Roles roles=new Roles();
+			User user=new User();
 			
-			user.setPassword(getEncodedPassword(user.getPassword()));
+			user.setPassword(getEncodedPassword(userRequestPOJO.getPassword()));
 			roles.setRoleId(1);
 			user.setRoles(roles);
 	
 			userRepository.save(user);
 			logger.info("User details saved in database");
 			
-			return ResponseEntity.ok("User details are saved in database");
+			return "User details are saved in database";
 		} catch (Exception e) {
 			logger.error("Unable to save the user details");
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Unable to save the roll details");
+			return "Unable to save the roll details";
 		}
 		
 	}
@@ -132,9 +138,17 @@ public class UserServiceImpl implements UserService,UserDetailsService{
 				logger.info("Get the access and refresh token from jwtutil class");
 				String tokenGenerationUrl="http://localhost:8083/auth/jwt/generateToken";
 				RestTemplate restTemplate =new RestTemplate();
-		        HttpEntity<SigninRequest> requestEntity = new HttpEntity<>(signinRequest);
+		        
 		        User user=userRepository.findByUsername(signinRequest.getUsername());
-		        setTokenProperties(signinRequest,user);
+		        
+	            TokenPropertiesRequest tokenPropertiesRequest = new TokenPropertiesRequest(
+	            		user.getUserId(),
+	            		secretKey,
+	                    accessTokenValidity,
+	                    refreshTokenValidity);
+	            
+	            HttpEntity<TokenPropertiesRequest> requestEntity = new HttpEntity<>(tokenPropertiesRequest);
+	            
 		        logger.info("Token are saved and display in response");
 		        return restTemplate.exchange(tokenGenerationUrl, HttpMethod.POST, requestEntity, JwtResponsePOJO.class);
 			}else {
@@ -147,24 +161,44 @@ public class UserServiceImpl implements UserService,UserDetailsService{
 		}
 	}	
 	
-	/**This method is used to set the id,secretkey, token time in request
-	 * @param signinRequest
-	 * @param user
+	/**This method is used to validate the token is expiry or not
+	 * @param uniqueId
+	 * @param accessToken
+	 * @return String
 	 */
-	private void setTokenProperties(SigninRequest signinRequest, User user) {
-		logger.info("Recived request to set the user id, secret key,token time");
+	public ResponseEntity<String> validateAccessToken(String username,String token) {
+		logger.info("Received the request to validate the token API");
 		try {
-			signinRequest.setUniqueId(user.getUserId());
-		    signinRequest.setSecretKey(SECRET_KEY);
-		    signinRequest.setAccessTokenTime(ACCESS_TOKEN_VALIDITY);
-		    signinRequest.setRefreshTokenTime(REFRESH_TOKEN_VALIDITY);
-		    logger.info("The Details are is setted");
+			logger.info("Pass the token and unique id in request");
+			TokenPropertiesRequest tokenPropertiesRequest=new TokenPropertiesRequest();
+			String apiUrl = "http://localhost:8083/auth/jwt/validateToken";
+			
+			User user = userRepository.findByUsername(username);
+		    RestTemplate restTemplate = new RestTemplate();
+		    
+		    HttpHeaders headers = new HttpHeaders();
+		    
+		    headers.set("Authorization", token);
+		    headers.set("Content-Type", "application/json");
+		    
+		    if (token != null && token.startsWith("Bearer ")) {
+		    	logger.info("Split the Bearer key in access token");
+		    	token = token.substring(7);
+	        }
+		    
+		    tokenPropertiesRequest.setUniqueId(user.getUserId());
+		    tokenPropertiesRequest.setSecretKey(secretKey);
+		    tokenPropertiesRequest.setAccessToken(token);
+		    
+		    HttpEntity<TokenPropertiesRequest> requestEntity = new HttpEntity<>(tokenPropertiesRequest, headers);
+
+		    logger.info("Token expiration succesfully verified using validate token API");
+		    return restTemplate.exchange(apiUrl, HttpMethod.POST, requestEntity, String.class);
 		} catch (Exception e) {
-			logger.error("Unable to set the details");
-			throw new CustomStreamException("Unable to set the details");
-		}
-	    
+			logger.error("Invalid token and user");
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid user and token");
+		}		
+		
 	}
-	
 	
 }

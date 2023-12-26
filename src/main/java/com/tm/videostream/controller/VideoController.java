@@ -53,7 +53,7 @@ public class VideoController {
 	 * @return List
 	 */
 	@PostMapping("/videoList")
-	public ResponseEntity<List<Video>> fetchVideoList(){
+	public ResponseEntity<List<Video>> fetchVideoList(@RequestParam String username){
 		logger.info("Received the request to fetch the video list");
 		try {
 			logger.info("Video List request is received");

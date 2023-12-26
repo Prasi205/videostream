@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -17,6 +18,7 @@ import com.tm.videostream.exception.CustomStreamException;
 import com.tm.videostream.pojo.RoleRequestPOJO;
 import com.tm.videostream.pojo.UserRequestPOJO;
 import com.tm.videostream.request.SigninRequest;
+import com.tm.videostream.request.TokenValidationRequest;
 import com.tm.videostream.response.JwtResponsePOJO;
 import com.tm.videostream.service.UserService;
 
@@ -31,7 +33,7 @@ public class UserController {
 	private UserService userService;
 	
 	/**Handles the roll details saving process based on received request
-	 * @param roleDetails
+	 * @param roleRequestPojo
 	 * @return String
 	 */
 	@PostMapping("/saveRollDetails")
@@ -48,14 +50,14 @@ public class UserController {
 	}
 	
 	/**Handles the user details saving process based on the received request
-	 * @param user
-	 * @return User
+	 * @param userRequestPOJO
+	 * @return String
 	 */
-	@PostMapping("/saveuser")
-	public ResponseEntity<String> saveUserDetails(@RequestBody @Valid UserRequestPOJO userRequestPOJO) {
+	@PostMapping("/signup")
+	public ResponseEntity<String> saveSignUPDetails(@RequestBody @Valid UserRequestPOJO userRequestPOJO) {
 		logger.info("Received request to save the user details");
 		try {
-			String saveUserDetails=userService.saveUserDetails(userRequestPOJO);
+			String saveUserDetails=userService.saveSignUPDetails(userRequestPOJO);
 			logger.info("User details are saved successfully");
 			return ResponseEntity.ok(saveUserDetails);
 		} catch (Exception e) {
@@ -66,9 +68,9 @@ public class UserController {
 		
 	/**Handles the generation of access and refresh tokens based on the received request
 	 * @param signinRequest
-	 * @return StreamResponsePOJO
+	 * @return JwtResponsePOJO
 	 */
-	@PostMapping("/login")
+	@PostMapping("/signin")
 	public ResponseEntity<JwtResponsePOJO> generateTokens(@RequestBody SigninRequest signinRequest) {
 		logger.info("Received request to generate token");
 		ResponseEntity<JwtResponsePOJO> jwtresponsePojo;
@@ -76,8 +78,28 @@ public class UserController {
 			logger.info("Token generation request received successfully");
 			jwtresponsePojo=userService.generateTokens(signinRequest);
 		} catch (Exception e) {
-			logger.error("Unable to received the token details");
-			throw new CustomStreamException("Unable to received the token details");
+			logger.error("Unable to received the token details request");
+			throw new CustomStreamException("Unable to received the token details request");
+		}
+		return jwtresponsePojo;
+	}
+	
+	/**This method is used to regenerate the tokens
+	 * @param refreshToken
+	 * @param tokenValidationRequest
+	 * @return JwtResponsePOJO
+	 */
+	@PostMapping("/regenerateTokens")
+	public ResponseEntity<JwtResponsePOJO> regenerateTokens(@RequestBody TokenValidationRequest tokenValidationRequest,
+			@RequestHeader(value = "Authorization", defaultValue = "") String refreshToken ){
+		logger.info("Received the request to regenerate the Tokens");
+		ResponseEntity<JwtResponsePOJO> jwtresponsePojo;
+		try {
+			logger.info("Token generation request received successfully");
+			jwtresponsePojo=userService.regenerateTokens(refreshToken, tokenValidationRequest);
+		} catch (Exception e) {
+			logger.error("Unable to received the regenerate tokens request");
+			throw new CustomStreamException("Unable to received the regenerate tokens request");
 		}
 		return jwtresponsePojo;
 	}

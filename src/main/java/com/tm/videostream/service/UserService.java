@@ -1,8 +1,6 @@
 package com.tm.videostream.service;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import com.tm.videostream.exception.CustomStreamException;
 import com.tm.videostream.pojo.RoleRequestPOJO;
@@ -17,11 +15,9 @@ public interface UserService {
 	
 	public String saveSignUPDetails(UserRequestPOJO userRequestPOJO);
 	
-	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException;
-	
     public ResponseEntity<JwtResponsePOJO> generateTokens(SigninRequest signinRequest) throws CustomStreamException;
 	
-    public ResponseEntity<String> validateToken(String accessToken, String username);
+    public ResponseEntity<String> validateToken(String accessToken, TokenValidationRequest tokenValidationRequest);
 	
     public ResponseEntity<JwtResponsePOJO> regenerateTokens(String refreshToken,TokenValidationRequest tokenValidationRequest);
 	

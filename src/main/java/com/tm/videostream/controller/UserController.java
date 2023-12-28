@@ -22,6 +22,7 @@ import com.tm.videostream.request.TokenValidationRequest;
 import com.tm.videostream.response.JwtResponsePOJO;
 import com.tm.videostream.service.UserService;
 
+/**This controller is used to save rolls,users,new token generations and regenerate tokens*/
 @RestController
 @CrossOrigin(origins = "http://localhost:3001", allowedHeaders = "*")
 @RequestMapping("/user")

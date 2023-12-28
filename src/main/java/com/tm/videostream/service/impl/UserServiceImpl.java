@@ -1,7 +1,5 @@
 package com.tm.videostream.service.impl;
 
-import java.util.Collections;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,9 +9,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -31,8 +26,12 @@ import com.tm.videostream.request.TokenValidationRequest;
 import com.tm.videostream.response.JwtResponsePOJO;
 import com.tm.videostream.service.UserService;
 
+/**This class provides the implementation of the UserService interface.
+ * It contains methods to handles save roll details,userdetails, generate new tokens,validate the token
+ *  and regenerate the tokens.
+ */
 @Service
-public class UserServiceImpl implements UserService,UserDetailsService{
+public class UserServiceImpl implements UserService{
 
 	Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 	
@@ -115,23 +114,6 @@ public class UserServiceImpl implements UserService,UserDetailsService{
 		
 	}
 	
-	/**This method is used to load the user details based on username
-	 * @param username
-	 * @return UserDetails
-	 */
-	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-		logger.info("Received request to find the user details based on user name");
-		User user = userRepository.findByUsername(username);
-		if (user != null) {
-			logger.info("Pass the username, password in userdetails for valid user");
-			return new org.springframework.security.core.userdetails.User(user.getUsername(), 
-					        user.getPassword(), Collections.emptyList());
-		} else {
-			logger.error("user not found with username");
-			throw new UsernameNotFoundException("User not found with username: " + username);
-		}
-	}
-	
 	/**This method is used to generate the tokens and return in response
 	 * @param signinRequest
 	 * @return JwtResponsePOJO
@@ -171,13 +153,13 @@ public class UserServiceImpl implements UserService,UserDetailsService{
 	 * @param tokenValidationRequest
 	 * @return String
 	 */
-	public ResponseEntity<String> validateToken(String accessToken, String username) {
+	public ResponseEntity<String> validateToken(String accessToken, TokenValidationRequest tokenValidationRequest) {
 		logger.info("Received the request to validate the token API");
 		try {
 			logger.info("Pass the token and unique id in request");
 			String apiUrl = "http://localhost:8083/auth/jwt/validateToken";
 			
-			User user = userRepository.findByUsername(username);
+			User user = userRepository.findByUsername(tokenValidationRequest.getUsername());
 		    RestTemplate restTemplate = new RestTemplate();
 		    
 		    if (accessToken != null && accessToken.startsWith("Bearer ")) {
@@ -195,6 +177,7 @@ public class UserServiceImpl implements UserService,UserDetailsService{
 		    logger.info("Token expiration succesfully verified using validate token API");
 		    return restTemplate.exchange(apiUrl, HttpMethod.POST, requestEntity, String.class);
 		} catch (Exception e) {
+			e.printStackTrace();
 			logger.error("Invalid token and user");
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid user and token");
 		}		

@@ -28,6 +28,9 @@ import com.tm.videostream.service.VideoService;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 
+/**This class provides the implementation of the VideoService interface.
+ * It contains methods to handles save video details, list the videos and streaming the video.
+ */
 @Service
 public class VideoServiceImpl implements VideoService{
 
@@ -43,14 +46,12 @@ public class VideoServiceImpl implements VideoService{
 	 * @param file
 	 * @param title
 	 * @param description
-	 * @param username
-	 * @param token
 	 * @return String 
 	 */
 	public ResponseEntity<String> saveVideoDetails(MultipartFile file, String title, String description) {
 		logger.info("Received the request to save the video details");
 		try {
-			
+			logger.info("Gathering the video details from request");
 			String originalFilename = file.getOriginalFilename();
 			String filePath = Paths.get(uploadDir, originalFilename).toString();
 			Files.copy(file.getInputStream(), Paths.get(filePath), StandardCopyOption.REPLACE_EXISTING);
@@ -87,7 +88,7 @@ public class VideoServiceImpl implements VideoService{
 		}
 	}
 	
-	/**This method is used to get the content type(Ex:mp4.avi ect) from file
+	/**This method is used to get the content type(Ex:mp4.avi etc) from file
 	 * @param filename
 	 * @return String
 	 */
@@ -105,8 +106,6 @@ public class VideoServiceImpl implements VideoService{
 	
 	/**This method is used to streaming the video
 	 * @param filename
-	 * @param username
-	 * @param token
 	 * @return StreamingResponseBody
 	 */
 	public ResponseEntity<StreamingResponseBody> streamVideo(String filename) {
@@ -124,7 +123,6 @@ public class VideoServiceImpl implements VideoService{
 					while ((bytesRead = inputStream.read(buffer)) != -1) {
 						outputStream.write(buffer, 0, bytesRead);
 						outputStream.flush();
-						logger.info("Video content is sucessfully writed");
 					}
 				} catch (IOException e) {
 					logger.error("Unable to fetch the video streaming content");

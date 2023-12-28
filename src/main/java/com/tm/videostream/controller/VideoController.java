@@ -18,6 +18,8 @@ import com.tm.videostream.entity.Video;
 import com.tm.videostream.exception.CustomStreamException;
 import com.tm.videostream.service.VideoService;
 
+/**This class handles the video related operations like saving video,list the videos and streaming the videos 
+ */
 @RestController
 public class VideoController {
 	
@@ -30,8 +32,6 @@ public class VideoController {
 	 * @param file
 	 * @param title
 	 * @param description
-	 * @param username
-	 * @param token
 	 * @return String
 	 */
 	@PostMapping("/saveVideoDetails")
@@ -53,7 +53,7 @@ public class VideoController {
 	 * @return List
 	 */
 	@PostMapping("/videoList")
-	public ResponseEntity<List<Video>> fetchVideoList(@RequestParam String username){
+	public ResponseEntity<List<Video>> fetchVideoList(){
 		logger.info("Received the request to fetch the video list");
 		try {
 			logger.info("Video List request is received");
@@ -67,11 +67,9 @@ public class VideoController {
 	
 	/**Handles the video streaming process based on received request
 	 * @param filename
-	 * @param username
-	 * @param token
 	 * @return StreamingResponseBody
 	 */
-	@PostMapping("/streamingVideo")
+	@PostMapping("/streamingVideo/{filename}")
 	public ResponseEntity<StreamingResponseBody> streamingVideo(@PathVariable String filename){
 		logger.info("Received the request to play the video");
 		ResponseEntity<StreamingResponseBody> streamingVideo;

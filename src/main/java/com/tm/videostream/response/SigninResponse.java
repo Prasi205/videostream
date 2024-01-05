@@ -1,7 +1,7 @@
 package com.tm.videostream.response;
 
 public class SigninResponse {
-	
+
 	private String accessToken;
 	private String refreshToken;
 
@@ -26,5 +26,4 @@ public class SigninResponse {
 		this.refreshToken = refreshToken;
 	}
 
-	
 }

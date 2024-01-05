@@ -1,25 +1,33 @@
 package com.tm.videostream.pojo;
 
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
 
 public class UserRequestPOJO {
 
-    private int userId;
-	
-	@NotEmpty(message = "Name cannot be blank")
+	private int userId;
+
+	@NotBlank(message = "Name cannot be blank")
+	@Size(min = 6, max = 25, message = "Name must be 6 to 25 character")
 	private String name;
-	
+
 	@Pattern(regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message = "Invalid email format")
 	private String email;
-	
+
 	@NotBlank(message = "Username cannot be blank")
+	@Size(min = 6, max = 25, message = "Username must be 6 to 25 character")
+	@Pattern(regexp = "^[a-zA-Z]", message = "Username not accept numbers and any other special character")
 	private String username;
-	
+
 	@NotBlank(message = "Password cannot be blank")
+	@Size(min = 6, max = 25, message = "Username must be 6 to 25 character")
 	private String password;
-	
+
+	@NotBlank(message = "Role cannot be blank")
+	@Size(min = 4, max = 15, message = "RoleName must be 4 to 15 character")
+	private String roleName;
+
 	public int getUserId() {
 		return userId;
 	}
@@ -59,5 +67,13 @@ public class UserRequestPOJO {
 	public void setPassword(String password) {
 		this.password = password;
 	}
-	
+
+	public String getRoleName() {
+		return roleName;
+	}
+
+	public void setRoleName(String roleName) {
+		this.roleName = roleName;
+	}
+
 }

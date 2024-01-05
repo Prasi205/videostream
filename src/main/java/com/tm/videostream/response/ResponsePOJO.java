@@ -1,7 +1,7 @@
 package com.tm.videostream.response;
 
-public class JwtResponsePOJO {
-	
+public class ResponsePOJO {
+
 	private String message;
 	private Object responseData;
 	private Boolean isSuccess;
@@ -10,6 +10,11 @@ public class JwtResponsePOJO {
 		setMessage(message);
 		setResponseData(responseData);
 		setIsSuccess(isSuccess);
+	}
+
+	public ResponsePOJO response(String message) {
+		response(message, null, false);
+		return this;
 	}
 
 	public String getMessage() {

@@ -3,9 +3,9 @@ package com.tm.videostream.request;
 public class TokenValidationRequest {
 
 	private String username;
-    private String accessToken;
-    private String refreshToken;
-    
+	private String accessToken;
+	private String refreshToken;
+
 	public String getUsername() {
 		return username;
 	}
@@ -29,5 +29,5 @@ public class TokenValidationRequest {
 	public void setRefreshToken(String refreshToken) {
 		this.refreshToken = refreshToken;
 	}
-	
+
 }

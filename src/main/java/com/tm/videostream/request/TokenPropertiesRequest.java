@@ -4,8 +4,8 @@ public class TokenPropertiesRequest {
 
 	private int uniqueId;
 	private String secretKey;
-    private String accessToken;
-    private String refreshToken;
+	private String accessToken;
+	private String refreshToken;
 	private int accessTokenTime;
 	private int refreshTokenTime;
 
@@ -25,7 +25,7 @@ public class TokenPropertiesRequest {
 		return uniqueId;
 	}
 
-	public 	void setUniqueId(int uniqueId) {
+	public void setUniqueId(int uniqueId) {
 		this.uniqueId = uniqueId;
 	}
 

@@ -23,10 +23,11 @@ public class VideoStreamingInterceptorConfig extends WebSecurityConfigurerAdapte
 	
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
-		registry.addInterceptor(streamingInterceptor).addPathPatterns("/***")
-		           .excludePathPatterns("/videostream/user/**");
+	    registry.addInterceptor(streamingInterceptor)
+	            .addPathPatterns("/**") 
+	            .excludePathPatterns("/user/*");
 	}
-	
+
 	@Bean
 	public PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
@@ -34,8 +35,15 @@ public class VideoStreamingInterceptorConfig extends WebSecurityConfigurerAdapte
 	
 	@Override
 	protected void configure(HttpSecurity httpSecurity) throws Exception {
-		httpSecurity.csrf().disable().headers()
-			.addHeaderWriter(new StaticHeadersWriter("Access-Control-Allow-Origin", "http://localhost:3001"));
+	    httpSecurity.csrf().disable()
+	        .headers()
+	        .addHeaderWriter(new StaticHeadersWriter("Access-Control-Allow-Origin", "http://localhost:3001"))
+	        .and()
+	        .headers()
+	        .contentTypeOptions()  // Include this if you're not using it already
+	        .and()
+	        .xssProtection();  // Include this if you're not using it already
 	}
+
 
 }

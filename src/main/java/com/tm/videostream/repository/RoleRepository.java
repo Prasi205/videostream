@@ -6,4 +6,6 @@ import com.tm.videostream.entity.Roles;
 
 public interface RoleRepository extends JpaRepository<Roles, Integer> {
 
+	public Roles findByRoleName(String roleName);
+
 }

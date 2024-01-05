@@ -51,12 +51,14 @@ public class StreamingInterceptor implements HandlerInterceptor {
 				return true;
 			} else {
 				logger.error("Invalid user and token");
+				response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 				return false;
 			}
 
 		} catch (Exception exception) {
+			exception.printStackTrace();
 			logger.error("Unable to validate the request");
-			response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unable to validate the request");
+			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 			return false;
 		}
 	}

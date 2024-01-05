@@ -17,11 +17,11 @@ public class User {
 	private String email;
 	private String username;
 	private String password;
-	
+
 	@OneToOne
 	@JoinColumn(name = "roleId")
 	private Roles roles;
-	
+
 	public int getUserId() {
 		return userId;
 	}

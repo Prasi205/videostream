@@ -23,208 +23,211 @@ import com.tm.videostream.repository.UserRepository;
 import com.tm.videostream.request.SigninRequest;
 import com.tm.videostream.request.TokenPropertiesRequest;
 import com.tm.videostream.request.TokenValidationRequest;
-import com.tm.videostream.response.JwtResponsePOJO;
+import com.tm.videostream.response.ResponsePOJO;
 import com.tm.videostream.service.UserService;
 
-/**This class provides the implementation of the UserService interface.
- * It contains methods to handles save roll details,userdetails, generate new tokens,validate the token
- *  and regenerate the tokens.
+/**
+ * This class provides the implementation of the UserService interface. It
+ * contains methods to handles save roll details,userdetails, generate new
+ * tokens,validate the token and regenerate the tokens.
  */
 @Service
-public class UserServiceImpl implements UserService{
+public class UserServiceImpl implements UserService {
 
 	Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
-	
+
 	@Autowired
 	private RoleRepository roleRepository;
-	
+
 	@Autowired
 	private UserRepository userRepository;
-	
+
 	@Autowired
 	private PasswordEncoder passwordEncoder;
-	
+
 	@Value("${jwt.secret}")
 	private String secretKey;
-	
+
 	@Value("${jwt.accessTokenValidity}")
 	private int accessTokenValidity;
-	
+
 	@Value("${jwt.refreshTokenValidity}")
 	private int refreshTokenValidity;
-	
-	/**This method is used to encoded the user password
-	 * @param password
-	 * @return String
-	 */
-	public String getEncodedPassword(String password) {
-		try {
-			logger.info("Password is encoded");
-			return passwordEncoder.encode(password);
-		} catch (Exception e) {
-			logger.error("Unable to encoded the password");
-			return "Unable to encoded the password";
-		}	
-	}
-	
-	/**This method is used to save the roll details in database
+
+	/**
+	 * This method is used to save the roll details in database
+	 * 
 	 * @param roleRequestPojo
-	 * @return String
+	 * @return boolean
 	 */
-	public String saveRollDetails(RoleRequestPOJO roleRequestPojo){
+	public boolean saveRollDetails(RoleRequestPOJO roleRequestPojo) {
 		logger.info("Received request to save the role details");
 		try {
-			Roles saveRollDetails=new Roles();
-			saveRollDetails.setRoleName("ROLE_"+roleRequestPojo.getRoleName());
+			Roles saveRollDetails = new Roles();
+			saveRollDetails.setRoleName("ROLE_" + roleRequestPojo.getRoleName());
 			roleRepository.save(saveRollDetails);
 			logger.info("Roles details are added in database");
-			return "Roles details are added in database";
+			return true;
 		} catch (Exception e) {
 			logger.error("Unable to save roll details in database");
-			return "Unable to save roll details in database";
+			return false;
 		}
 	}
-	
-	/**This method is used to save the user details in database
+
+	/**
+	 * This method is used to save the user details in database
+	 * 
 	 * @param userRequestPOJO
-	 * @return String
+	 * @return boolean
 	 */
-	public String saveSignUPDetails(UserRequestPOJO userRequestPOJO) {
+	public boolean saveSignUPDetails(UserRequestPOJO userRequestPOJO) {
 		logger.info("Received request to save the user details in database");
 		try {
-			Roles roles=new Roles();
-			User user=new User();
-			
+			User user = new User();
+
 			user.setName(userRequestPOJO.getName());
 			user.setEmail(userRequestPOJO.getEmail());
 			user.setUsername(userRequestPOJO.getUsername());
-			user.setPassword(getEncodedPassword(userRequestPOJO.getPassword()));
-			
-			roles.setRoleId(1);
+
+			/* Password convert as Bcrypt format */
+			user.setPassword(passwordEncoder.encode(userRequestPOJO.getPassword()));
+
+			Roles roles = roleRepository.findByRoleName("ROLE_" + userRequestPOJO.getRoleName());
+
 			user.setRoles(roles);
-	
+
 			userRepository.save(user);
 			logger.info("User details saved in database");
-			
-			return "User details are saved in database";
+			return true;
 		} catch (Exception e) {
 			logger.error("Unable to save the user details");
-			return "Unable to save the roll details";
+			return false;
 		}
-		
+
 	}
-	
-	/**This method is used to generate the tokens and return in response
+
+	/**
+	 * This method is used to generate the tokens and return in response
+	 * 
 	 * @param signinRequest
-	 * @return JwtResponsePOJO
+	 * @return ResponseEntity<ResponsePOJO>
 	 */
-	public ResponseEntity<JwtResponsePOJO> generateTokens(SigninRequest signinRequest) throws CustomStreamException{
+	public ResponseEntity<ResponsePOJO> generateToken(SigninRequest signinRequest) throws CustomStreamException {
 		logger.info("Received request to generate the tokens");
+		ResponsePOJO responsePOJO = new ResponsePOJO();
 		try {
 			logger.info("Get the user details for token generation process");
 			User user = userRepository.findByUsername(signinRequest.getUsername());
-			if (passwordEncoder.matches(signinRequest.getPassword(), user.getPassword())) {
+			if (user != null && passwordEncoder.matches(signinRequest.getPassword(), user.getPassword())) {
 				logger.info("Get the access and refresh token from jsonwebtoken application");
-				String tokenGenerationUrl="http://localhost:8083/auth/jwt/generateToken";
-				RestTemplate restTemplate =new RestTemplate();
-		        
-	            TokenPropertiesRequest tokenPropertiesRequest = new TokenPropertiesRequest(
-	            		user.getUserId(),
-	            		secretKey,
-	                    accessTokenValidity,
-	                    refreshTokenValidity);
-	            
-	            HttpEntity<TokenPropertiesRequest> requestEntity = new HttpEntity<>(tokenPropertiesRequest);
-	            
-		        logger.info("Token are saved and display in response");
-		        return restTemplate.exchange(tokenGenerationUrl, HttpMethod.POST, requestEntity, JwtResponsePOJO.class);
-			}else {
+				String tokenGenerationUrl = "http://localhost:8083/auth/jwt/generateToken";
+				RestTemplate restTemplate = new RestTemplate();
+
+				TokenPropertiesRequest tokenPropertiesRequest = new TokenPropertiesRequest(user.getUserId(), secretKey,
+						accessTokenValidity, refreshTokenValidity);
+
+				HttpEntity<TokenPropertiesRequest> requestEntity = new HttpEntity<>(tokenPropertiesRequest);
+
+				logger.info("Token are saved and display in response");
+				return restTemplate.exchange(tokenGenerationUrl, HttpMethod.POST, requestEntity, ResponsePOJO.class);
+			} else {
 				logger.error("Please given the proper credentials");
-				throw new CustomStreamException("Invalid credential");
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responsePOJO.response("Invalid Credential"));
 			}
 		} catch (Exception e) {
 			logger.error("Unable to received the token details");
-		    throw new CustomStreamException("Unable to received the token details");
+			throw new CustomStreamException("Unable to received the token details");
 		}
-	}	
-	
-	/**This method is used to validate the token is expiry or not
+	}
+
+	/**
+	 * This method is used to validate the token is expiry or not
+	 * 
 	 * @param accessToken
 	 * @param tokenValidationRequest
-	 * @return String
+	 * @return ResponseEntity<String>
 	 */
 	public ResponseEntity<String> validateToken(String accessToken, TokenValidationRequest tokenValidationRequest) {
 		logger.info("Received the request to validate the token API");
 		try {
 			logger.info("Pass the token and unique id in request");
 			String apiUrl = "http://localhost:8083/auth/jwt/validateToken";
-			
-			User user = userRepository.findByUsername(tokenValidationRequest.getUsername());
-		    RestTemplate restTemplate = new RestTemplate();
-		    
-		    if (accessToken != null && accessToken.startsWith("Bearer ")) {
-		    	logger.info("Split the Bearer key in access token");
-		    	accessToken = accessToken.substring(7);
-	        }
-		    
-		    TokenPropertiesRequest tokenPropertiesRequest=new TokenPropertiesRequest();
-		    tokenPropertiesRequest.setUniqueId(user.getUserId());
-		    tokenPropertiesRequest.setSecretKey(secretKey);
-		    tokenPropertiesRequest.setAccessToken(accessToken);
-		    
-		    HttpEntity<TokenPropertiesRequest> requestEntity = new HttpEntity<>(tokenPropertiesRequest);
 
-		    logger.info("Token expiration succesfully verified using validate token API");
-		    return restTemplate.exchange(apiUrl, HttpMethod.POST, requestEntity, String.class);
+			User user = userRepository.findByUsername(tokenValidationRequest.getUsername());
+			RestTemplate restTemplate = new RestTemplate();
+
+			if (accessToken != null && accessToken.startsWith("Bearer ")) {
+				logger.info("Split the Bearer key in access token");
+				accessToken = accessToken.substring(7);
+			}
+
+			TokenPropertiesRequest tokenPropertiesRequest = new TokenPropertiesRequest();
+			tokenPropertiesRequest.setUniqueId(user.getUserId());
+			tokenPropertiesRequest.setSecretKey(secretKey);
+			tokenPropertiesRequest.setAccessToken(accessToken);
+
+			HttpEntity<TokenPropertiesRequest> requestEntity = new HttpEntity<>(tokenPropertiesRequest);
+
+			logger.info("Token expiration succesfully verified using validate token API");
+			return restTemplate.exchange(apiUrl, HttpMethod.POST, requestEntity, String.class);
 		} catch (Exception e) {
-			e.printStackTrace();
 			logger.error("Invalid token and user");
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid user and token");
-		}		
-		
+		}
+
 	}
-	
-	/**This method is used to regenerate the access and refresh token
+
+	/**
+	 * This method is used to regenerate the access and refresh token
+	 * 
 	 * @param refreshToken
 	 * @param tokenValidationRequest
-	 * @return JwtResponsePOJO
+	 * @return ResponseEntity<ResponsePOJO>
 	 */
-	public ResponseEntity<JwtResponsePOJO> regenerateTokens(String refreshToken, TokenValidationRequest tokenValidationRequest) {
+	public ResponseEntity<ResponsePOJO> regenerateTokens(String refreshToken,
+			TokenValidationRequest tokenValidationRequest) {
 		logger.info("Received request to regenerate the tokens");
+		ResponsePOJO responsePOJO = new ResponsePOJO();
 		try {
 			logger.info("Regenerate tokens process is started");
 			TokenPropertiesRequest tokenPropertiesRequest = new TokenPropertiesRequest();
 			String regenerateTokenURL = "http://localhost:8083/auth/jwt/regenerateTokens";
 
 			User user = userRepository.findByUsername(tokenValidationRequest.getUsername());
-			RestTemplate restTemplate = new RestTemplate();
+			if (user != null) {
+				RestTemplate restTemplate = new RestTemplate();
 
-			HttpHeaders headers = new HttpHeaders();
+				HttpHeaders headers = new HttpHeaders();
 
-			headers.set("Authorization", refreshToken);
-			headers.set("Content-Type", "application/json");
-			    
-			if (refreshToken != null && refreshToken.startsWith("Bearer ")) {
-				logger.info("Split the Bearer key in access token");
-				refreshToken = refreshToken.substring(7);
+				headers.set("Authorization", refreshToken);
+				headers.set("Content-Type", "application/json");
+
+				if (refreshToken != null && refreshToken.startsWith("Bearer ")) {
+					logger.info("Split the Bearer key in access token");
+					refreshToken = refreshToken.substring(7);
+				}
+
+				tokenPropertiesRequest.setUniqueId(user.getUserId());
+				tokenPropertiesRequest.setSecretKey(secretKey);
+				tokenPropertiesRequest.setAccessToken(tokenValidationRequest.getAccessToken());
+				tokenPropertiesRequest.setRefreshToken(refreshToken);
+				tokenPropertiesRequest.setAccessTokenTime(accessTokenValidity);
+				tokenPropertiesRequest.setRefreshTokenTime(refreshTokenValidity);
+
+				HttpEntity<TokenPropertiesRequest> requestEntity = new HttpEntity<>(tokenPropertiesRequest, headers);
+
+				logger.info("Regenerate tokens request verified using regenerateTokens API");
+				return restTemplate.exchange(regenerateTokenURL, HttpMethod.POST, requestEntity, ResponsePOJO.class);
+			} else {
+				logger.error("Given name does not match database");
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+						.body(responsePOJO.response("Given name does not match database"));
 			}
-			 
-			tokenPropertiesRequest.setUniqueId(user.getUserId());
-			tokenPropertiesRequest.setSecretKey(secretKey);
-			tokenPropertiesRequest.setAccessToken(tokenValidationRequest.getAccessToken());
-			tokenPropertiesRequest.setRefreshToken(refreshToken);
-			tokenPropertiesRequest.setAccessTokenTime(accessTokenValidity);
-			tokenPropertiesRequest.setRefreshTokenTime(refreshTokenValidity);
-
-			HttpEntity<TokenPropertiesRequest> requestEntity = new HttpEntity<>(tokenPropertiesRequest,headers);
-
-			logger.info("Access and refresh tokens is regenerated");
-   			return restTemplate.exchange(regenerateTokenURL, HttpMethod.POST, requestEntity, JwtResponsePOJO.class);
 		} catch (Exception e) {
 			logger.error("Unable to regenerate the tokens");
 			throw new CustomStreamException("Unable to regenerate the tokens");
 		}
 
 	}
-	
+
 }

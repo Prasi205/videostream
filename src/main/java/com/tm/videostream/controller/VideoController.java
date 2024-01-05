@@ -1,86 +1,80 @@
 package com.tm.videostream.controller;
 
-import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import com.tm.videostream.entity.Video;
 import com.tm.videostream.exception.CustomStreamException;
+import com.tm.videostream.response.ResponsePOJO;
 import com.tm.videostream.service.VideoService;
 
-/**This class handles the video related operations like saving video,list the videos and streaming the videos 
+/**
+ * This class handles the video related operations like saving video,list the
+ * videos and streaming the videos
  */
 @RestController
+@RequestMapping("/customer")
 public class VideoController {
-	
+
 	Logger logger = LoggerFactory.getLogger(VideoController.class);
 
 	@Autowired
 	private VideoService videoService;
-	
-	/**Handles the video details saving process based on the received request
+
+	/**
+	 * Handles the video details saving process based on the received request
+	 * 
 	 * @param file
 	 * @param title
 	 * @param description
-	 * @return String
+	 * @return ResponsePOJO
 	 */
 	@PostMapping("/saveVideoDetails")
-	public ResponseEntity<String> saveVideoDetails(@RequestParam("file") MultipartFile file, @RequestParam String title,
-                                     @RequestParam String description){
+	public ResponsePOJO saveVideoDetails(@RequestParam MultipartFile file, @RequestParam String title,
+			@RequestParam String description) {
 		logger.info("Received the request to save the video details");
-		ResponseEntity<String> isSavedVideoDetails;
+		ResponsePOJO responsePOJO = new ResponsePOJO();
 		try {
 			logger.info("Video details saving request is received");
-			isSavedVideoDetails=videoService.saveVideoDetails(file, title, description);
+			if (videoService.saveVideoDetails(file, title, description)) {
+				logger.info("Video details are saved in database");
+				responsePOJO.response("Video details are saved in database", null, true);
+			} else {
+				logger.error("Unable to save the video details");
+				responsePOJO.response("Unable to save the video details", null, false);
+			}
 		} catch (Exception e) {
 			logger.error("Unable to validate the request");
-			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unable to validate the request");
+			throw new CustomStreamException("Unable to received the video details saving request");
 		}
-		return isSavedVideoDetails;
+		return responsePOJO;
 	}
-	
-	/**Handles the video list fecthing process based on received request
-	 * @return List
-	 */
-	@PostMapping("/videoList")
-	public ResponseEntity<List<Video>> fetchVideoList(){
-		logger.info("Received the request to fetch the video list");
-		try {
-			logger.info("Video List request is received");
-			List<Video> videoList=videoService.fetchVideoList();
-			return ResponseEntity.ok(videoList);
-		} catch (Exception e) {
-			logger.error("Unable to received the fetch video list request");
-			throw new CustomStreamException("Unable to received the fetch video list request");
-		}
-	}
-	
-	/**Handles the video streaming process based on received request
+
+	/**
+	 * Handles the video streaming process based on received request
+	 * 
 	 * @param filename
 	 * @return StreamingResponseBody
 	 */
-	@PostMapping("/streamingVideo/{filename}")
-	public ResponseEntity<StreamingResponseBody> streamingVideo(@PathVariable String filename){
+	@PostMapping("/streamingVideo")
+	public ResponseEntity<StreamingResponseBody> streamingVideo(@RequestParam String filename) {
 		logger.info("Received the request to play the video");
 		ResponseEntity<StreamingResponseBody> streamingVideo;
 		try {
 			logger.info("Video Streaming or playing request is received");
-			streamingVideo=videoService.streamVideo(filename);
+			streamingVideo = videoService.streamingVideoByFileName(filename);
 		} catch (Exception e) {
 			logger.error("Unable to streaming or play the video");
 			throw new CustomStreamException("Unable to streaming or play the video");
 		}
 		return streamingVideo;
 	}
-	
+
 }

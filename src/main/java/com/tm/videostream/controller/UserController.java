@@ -117,7 +117,7 @@ public class UserController {
 	 * @return ResponseEntity<ResponsePOJO>
 	 */
 	@PostMapping("/regenerateTokens")
-	public ResponseEntity<ResponsePOJO> regenerateTokens(@RequestBody TokenValidationRequest tokenValidationRequest,
+	public ResponseEntity<ResponsePOJO> regenerateTokens(@RequestBody @Valid TokenValidationRequest tokenValidationRequest,
 			@RequestHeader(value = "Authorization", defaultValue = "") String refreshToken) {
 		logger.info("Received the request to regenerate the Tokens");
 		ResponseEntity<ResponsePOJO> jwtresponsePojo;

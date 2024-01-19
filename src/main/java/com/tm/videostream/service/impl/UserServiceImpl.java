@@ -95,15 +95,15 @@ public class UserServiceImpl implements UserService {
 			Roles roles = roleRepository.findByRoleName("ROLE_" + userRequestPOJO.getRoleName());
 
 			user.setRoles(roles);
-
+            
 			userRepository.save(user);
 			logger.info("User details saved in database");
 			return true;
+			
 		} catch (Exception e) {
 			logger.error("Unable to save the user details");
 			return false;
 		}
-
 	}
 
 	/**
@@ -117,21 +117,21 @@ public class UserServiceImpl implements UserService {
 		ResponsePOJO responsePOJO = new ResponsePOJO();
 		try {
 			logger.info("Get the user details for token generation process");
-			User user = userRepository.findByUsername(signinRequest.getUsername());
+			User user = userRepository.findByUsername(signinRequest.getUsername().trim());
 			if (user != null && passwordEncoder.matches(signinRequest.getPassword(), user.getPassword())) {
 				logger.info("Get the access and refresh token from jsonwebtoken application");
 				String tokenGenerationUrl = "http://localhost:8083/auth/jwt/generateToken";
 				RestTemplate restTemplate = new RestTemplate();
-
-				TokenPropertiesRequest tokenPropertiesRequest = new TokenPropertiesRequest(user.getUserId(), secretKey,
-						accessTokenValidity, refreshTokenValidity);
+               //Todo (user id doubt)
+				TokenPropertiesRequest tokenPropertiesRequest = new TokenPropertiesRequest
+						(user.getUserId(), secretKey, accessTokenValidity, refreshTokenValidity);
 
 				HttpEntity<TokenPropertiesRequest> requestEntity = new HttpEntity<>(tokenPropertiesRequest);
 
 				logger.info("Token are saved and display in response");
 				return restTemplate.exchange(tokenGenerationUrl, HttpMethod.POST, requestEntity, ResponsePOJO.class);
 			} else {
-				logger.error("Please given the proper credentials");
+				logger.warn("Please given the proper credentials");
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responsePOJO.response("Invalid Credential"));
 			}
 		} catch (Exception e) {
@@ -184,8 +184,7 @@ public class UserServiceImpl implements UserService {
 	 * @param tokenValidationRequest
 	 * @return ResponseEntity<ResponsePOJO>
 	 */
-	public ResponseEntity<ResponsePOJO> regenerateTokens(String refreshToken,
-			TokenValidationRequest tokenValidationRequest) {
+	public ResponseEntity<ResponsePOJO> regenerateTokens(String refreshToken,TokenValidationRequest tokenValidationRequest) {
 		logger.info("Received request to regenerate the tokens");
 		ResponsePOJO responsePOJO = new ResponsePOJO();
 		try {
@@ -193,8 +192,8 @@ public class UserServiceImpl implements UserService {
 			TokenPropertiesRequest tokenPropertiesRequest = new TokenPropertiesRequest();
 			String regenerateTokenURL = "http://localhost:8083/auth/jwt/regenerateTokens";
 
-			User user = userRepository.findByUsername(tokenValidationRequest.getUsername());
-			if (user != null) {
+			User user = userRepository.findByUsername(tokenValidationRequest.getUsername().trim());
+			if (user != null ) {
 				RestTemplate restTemplate = new RestTemplate();
 
 				HttpHeaders headers = new HttpHeaders();
@@ -221,7 +220,7 @@ public class UserServiceImpl implements UserService {
 			} else {
 				logger.error("Given name does not match database");
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-						.body(responsePOJO.response("Given name does not match database"));
+						     .body(responsePOJO.response("Given name does not match database"));
 			}
 		} catch (Exception e) {
 			logger.error("Unable to regenerate the tokens");

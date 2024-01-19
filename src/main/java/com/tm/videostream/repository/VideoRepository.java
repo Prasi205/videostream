@@ -1,9 +1,46 @@
 package com.tm.videostream.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.List;
 
+import javax.transaction.Transactional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+
+import com.tm.videostream.dto.VideoDTO;
 import com.tm.videostream.entity.Video;
 
 public interface VideoRepository extends JpaRepository<Video, Integer> {
+
+	@Transactional
+	@Modifying
+	@Query("UPDATE Video SET approvalStatus = :approvalStatus WHERE fileId = :fileId")
+	int updateApprovalStatusByFileId(int fileId, String approvalStatus);
+	
+	@Query("SELECT new com.tm.videostream.dto.VideoDTO(video.fileId, video.title, video.description, "
+			   + "video.filename, user.username) FROM Video video "
+			   + "INNER JOIN User user ON video.user.userId = user.userId "
+			   + "WHERE video.approvalStatus = :approvalStatus")
+	List<VideoDTO> findAdminVideoByApprovalStatus(String approvalStatus);
+
+	@Query("SELECT new com.tm.videostream.dto.VideoDTO(video.fileId, video.title, video.description, "
+			+ "video.filename, user.username) FROM Video video " +
+		      "WHERE video.user.username = :username AND video.approvalStatus = :approvalStatus")
+	List<VideoDTO> findCustomerVideoByApprovalStatus(String username,String approvalStatus);
+	
+	@Query("SELECT new com.tm.videostream.dto.VideoDTO(video.fileId, video.title, video.description, "
+			   + "video.filename, user.username) FROM Video video "
+			   + "INNER JOIN User user ON video.user.userId = user.userId "
+			   +" WHERE (video.title = :search OR video.description = :search )"
+			   + "AND video.approvalStatus = :approvalStatus")
+	List<VideoDTO> findAdminVideoByOptionANDApprovalStatus(String search, String approvalStatus);
+	
+	@Query("SELECT new com.tm.videostream.dto.VideoDTO(video.fileId, video.title, video.description, video.filename, user.username) " +
+		       "FROM Video video " +
+		       "WHERE video.user.username = :username " +
+		       "AND (video.title = :search OR video.description = :search) " +
+		       "AND video.approvalStatus = :approvalStatus")
+	List<VideoDTO> findCustomerVideoByOptionAndApprovalStatus(String username, String search, String approvalStatus);
 
 }

@@ -1,9 +1,15 @@
 package com.tm.videostream.request;
 
+import javax.validation.constraints.NotBlank;
+
 public class TokenValidationRequest {
 
+	@NotBlank(message =  "Username cannot be blank")
 	private String username;
+	
+	@NotBlank(message =  "Access token cannot be blank")
 	private String accessToken;
+
 	private String refreshToken;
 
 	public String getUsername() {

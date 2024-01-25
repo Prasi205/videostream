@@ -2,30 +2,18 @@ package com.tm.videostream.request;
 
 public class TokenPropertiesRequest {
 
-	private int uniqueId;
+	private String uniqueId;
 	private String secretKey;
-	private String accessToken;
-	private String refreshToken;
 	private int accessTokenTime;
 	private int refreshTokenTime;
+	private String accessToken;
+	private String refreshToken;
 
-	public TokenPropertiesRequest() {
-		super();
-	}
-
-	public TokenPropertiesRequest(int uniqueId, String secretKey, int accessTokenTime, int refreshTokenTime) {
-		super();
-		this.uniqueId = uniqueId;
-		this.secretKey = secretKey;
-		this.accessTokenTime = accessTokenTime;
-		this.refreshTokenTime = refreshTokenTime;
-	}
-
-	public int getUniqueId() {
+	public String getUniqueId() {
 		return uniqueId;
 	}
 
-	public void setUniqueId(int uniqueId) {
+	public void setUniqueId(String uniqueId) {
 		this.uniqueId = uniqueId;
 	}
 
@@ -35,22 +23,6 @@ public class TokenPropertiesRequest {
 
 	public void setSecretKey(String secretKey) {
 		this.secretKey = secretKey;
-	}
-
-	public String getAccessToken() {
-		return accessToken;
-	}
-
-	public void setAccessToken(String accessToken) {
-		this.accessToken = accessToken;
-	}
-
-	public String getRefreshToken() {
-		return refreshToken;
-	}
-
-	public void setRefreshToken(String refreshToken) {
-		this.refreshToken = refreshToken;
 	}
 
 	public int getAccessTokenTime() {
@@ -67,6 +39,22 @@ public class TokenPropertiesRequest {
 
 	public void setRefreshTokenTime(int refreshTokenTime) {
 		this.refreshTokenTime = refreshTokenTime;
+	}
+
+	public String getAccessToken() {
+		return accessToken;
+	}
+
+	public void setAccessToken(String accessToken) {
+		this.accessToken = accessToken;
+	}
+
+	public String getRefreshToken() {
+		return refreshToken;
+	}
+
+	public void setRefreshToken(String refreshToken) {
+		this.refreshToken = refreshToken;
 	}
 
 }

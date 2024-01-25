@@ -17,7 +17,7 @@ import com.tm.videostream.exception.CustomStreamException;
 import com.tm.videostream.pojo.RoleRequestPOJO;
 import com.tm.videostream.pojo.UserRequestPOJO;
 import com.tm.videostream.request.SigninRequest;
-import com.tm.videostream.request.TokenValidationRequest;
+import com.tm.videostream.request.TokenRegenerationRequest;
 import com.tm.videostream.response.ResponsePOJO;
 import com.tm.videostream.service.UserService;
 
@@ -27,7 +27,7 @@ import com.tm.videostream.service.UserService;
  */
 @RestController
 @CrossOrigin(origins = "http://localhost:3001", allowedHeaders = "*")
-@RequestMapping("/user")
+@RequestMapping("/auth")
 public class UserController {
 
 	Logger logger = LoggerFactory.getLogger(UserController.class);
@@ -77,8 +77,8 @@ public class UserController {
 				logger.info("User details are saved in database");
 				responsePOJO.response("User details are saved in database", null, true);
 			} else {
-				logger.error("Unable to save the user details");
-				responsePOJO.response("Unable to save the user details", null, false);
+				logger.error("Given username is already exist");
+				responsePOJO.response("Given username is already exist", null, false);
 			}
 		} catch (Exception e) {
 			logger.error("Unable to received the user saving request");
@@ -117,18 +117,18 @@ public class UserController {
 	 * @return ResponseEntity<ResponsePOJO>
 	 */
 	@PostMapping("/regenerateTokens")
-	public ResponseEntity<ResponsePOJO> regenerateTokens(@RequestBody @Valid TokenValidationRequest tokenValidationRequest,
+	public ResponseEntity<ResponsePOJO> regenerateTokens(@RequestBody @Valid TokenRegenerationRequest tokenValidationRequest,
 			@RequestHeader(value = "Authorization", defaultValue = "") String refreshToken) {
 		logger.info("Received the request to regenerate the Tokens");
-		ResponseEntity<ResponsePOJO> jwtresponsePojo;
+		ResponseEntity<ResponsePOJO> responsePOJO;
 		try {
 			logger.info("Token generation request received successfully");
-			jwtresponsePojo = userService.regenerateTokens(refreshToken, tokenValidationRequest);
+			responsePOJO = userService.regenerateTokens(refreshToken, tokenValidationRequest);
 		} catch (Exception e) {
 			logger.error("Unable to received the regenerate tokens request");
 			throw new CustomStreamException("Unable to regenerate the tokens");
 		}
-		return jwtresponsePojo;
+		return responsePOJO;
 	}
 
 }

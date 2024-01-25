@@ -1,23 +1,19 @@
 package com.tm.videostream.request;
 
-import javax.validation.constraints.NotBlank;
-
 public class TokenValidationRequest {
 
-	@NotBlank(message =  "Username cannot be blank")
-	private String username;
+	private String uniqueId;
+	private String secretKey;
 	
-	@NotBlank(message =  "Access token cannot be blank")
 	private String accessToken;
+	private String username;
 
-	private String refreshToken;
-
-	public String getUsername() {
-		return username;
+	public String getUniqueId() {
+		return uniqueId;
 	}
 
-	public void setUsername(String username) {
-		this.username = username;
+	public void setUniqueId(String uniqueId) {
+		this.uniqueId = uniqueId;
 	}
 
 	public String getAccessToken() {
@@ -28,12 +24,20 @@ public class TokenValidationRequest {
 		this.accessToken = accessToken;
 	}
 
-	public String getRefreshToken() {
-		return refreshToken;
+	public String getSecretKey() {
+		return secretKey;
 	}
 
-	public void setRefreshToken(String refreshToken) {
-		this.refreshToken = refreshToken;
+	public void setSecretKey(String secretKey) {
+		this.secretKey = secretKey;
+	}
+
+	public String getUsername() {
+		return username;
+	}
+
+	public void setUsername(String username) {
+		this.username = username;
 	}
 
 }

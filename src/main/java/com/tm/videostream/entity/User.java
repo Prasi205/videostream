@@ -17,6 +17,7 @@ public class User {
 	private String email;
 	private String username;
 	private String password;
+	private String uniqueId;
 
 	@OneToOne
 	@JoinColumn(name = "roleId")
@@ -68,6 +69,14 @@ public class User {
 
 	public void setRoles(Roles roles) {
 		this.roles = roles;
+	}
+
+	public String getUniqueId() {
+		return uniqueId;
+	}
+
+	public void setUniqueId(String uniqueId) {
+		this.uniqueId = uniqueId;
 	}
 
 }

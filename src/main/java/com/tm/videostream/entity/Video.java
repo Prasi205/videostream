@@ -30,7 +30,9 @@ public class Video {
 	private String description;
 
 	private String approvalStatus;
-
+	private float size;
+	private float duration;
+	
 	@CreationTimestamp
 	private Timestamp createdAt;
 
@@ -39,7 +41,7 @@ public class Video {
 	
 	private String createdBy;
 	private String updatedBy;
-
+	
 	@OneToOne
 	@JoinColumn(name = "userId")
 	private User user;
@@ -84,6 +86,22 @@ public class Video {
 		this.approvalStatus = approvalStatus;
 	}
 	
+	public float getSize() {
+		return size;
+	}
+
+	public void setSize(float size) {
+		this.size = size;
+	}
+
+	public float getDuration() {
+		return duration;
+	}
+
+	public void setDuration(float duration) {
+		this.duration = duration;
+	}
+
 	public Timestamp getCreatedAt() {
 		return createdAt;
 	}
@@ -123,6 +141,5 @@ public class Video {
 	public void setUser(User user) {
 		this.user = user;
 	}
-
 	
 }

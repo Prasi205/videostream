@@ -1,6 +1,6 @@
-package com.tm.videostream.request;
+package com.tm.videostream.pojo;
 
-public class TokenPropertiesRequest {
+public class TokenPropertiesPOJO {
 
 	private String uniqueId;
 	private String secretKey;

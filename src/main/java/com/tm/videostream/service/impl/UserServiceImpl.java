@@ -18,14 +18,13 @@ import org.springframework.web.client.RestTemplate;
 import com.tm.videostream.entity.Roles;
 import com.tm.videostream.entity.User;
 import com.tm.videostream.exception.CustomStreamException;
-import com.tm.videostream.pojo.RoleRequestPOJO;
-import com.tm.videostream.pojo.UserRequestPOJO;
+import com.tm.videostream.pojo.TokenPropertiesPOJO;
+import com.tm.videostream.pojo.request.RoleRequestPOJO;
+import com.tm.videostream.pojo.request.SigninRequestPOJO;
+import com.tm.videostream.pojo.request.TokenRegenerationRequestPOJO;
+import com.tm.videostream.pojo.request.UserRequestPOJO;
 import com.tm.videostream.repository.RoleRepository;
 import com.tm.videostream.repository.UserRepository;
-import com.tm.videostream.request.SigninRequest;
-import com.tm.videostream.request.TokenPropertiesRequest;
-import com.tm.videostream.request.TokenRegenerationRequest;
-import com.tm.videostream.request.TokenValidationRequest;
 import com.tm.videostream.response.ResponsePOJO;
 import com.tm.videostream.service.UserService;
 
@@ -122,7 +121,7 @@ public class UserServiceImpl implements UserService {
 	 * @param signinRequest
 	 * @return ResponseEntity<ResponsePOJO>
 	 */
-	public ResponseEntity<ResponsePOJO> generateToken(SigninRequest signinRequest) throws CustomStreamException {
+	public ResponseEntity<ResponsePOJO> generateToken(SigninRequestPOJO signinRequest) throws CustomStreamException {
 		logger.info("Received request to generate the tokens");
 		ResponsePOJO responsePOJO = new ResponsePOJO();
 		try {
@@ -133,13 +132,13 @@ public class UserServiceImpl implements UserService {
 				String tokenGenerationUrl = "http://localhost:8083/auth/jwt/generateToken";
 				RestTemplate restTemplate = new RestTemplate();
 
-				TokenPropertiesRequest tokenPropertiesRequest = new TokenPropertiesRequest();
+				TokenPropertiesPOJO tokenPropertiesRequest = new TokenPropertiesPOJO();
 				tokenPropertiesRequest.setUniqueId(user.getUniqueId());
 				tokenPropertiesRequest.setSecretKey(secretKey);
 				tokenPropertiesRequest.setAccessTokenTime(accessTokenValidity);
 				tokenPropertiesRequest.setRefreshTokenTime(refreshTokenValidity);
 						
-				HttpEntity<TokenPropertiesRequest> requestEntity = new HttpEntity<>(tokenPropertiesRequest);
+				HttpEntity<TokenPropertiesPOJO> requestEntity = new HttpEntity<>(tokenPropertiesRequest);
 
 				logger.info("Token are saved and display in response");
 				return restTemplate.exchange(tokenGenerationUrl, HttpMethod.POST, requestEntity, ResponsePOJO.class);
@@ -160,13 +159,12 @@ public class UserServiceImpl implements UserService {
 	 * @param tokenValidationRequest
 	 * @return ResponseEntity<String>
 	 */
-	public ResponseEntity<String> validateToken(String accessToken, TokenValidationRequest tokenValidationRequest) {
+	public ResponseEntity<String> validateToken(String accessToken) {
 		logger.info("Received the request to validate the token API");
 		try {
 			logger.info("Pass the token and unique id in request");
 			String apiUrl = "http://localhost:8083/auth/jwt/validateToken";
-
-//			User user = userRepository.findByUsername(tokenValidationRequest.getUsername());
+			
 			RestTemplate restTemplate = new RestTemplate();
 
 			if (accessToken != null && accessToken.startsWith("Bearer ")) {
@@ -174,12 +172,11 @@ public class UserServiceImpl implements UserService {
 				accessToken = accessToken.substring(7);
 			}
 			
-			TokenPropertiesRequest tokenPropertiesRequest = new TokenPropertiesRequest();
-//			tokenPropertiesRequest.setUniqueId(user.getUniqueId());
+			TokenPropertiesPOJO tokenPropertiesRequest = new TokenPropertiesPOJO();
 			tokenPropertiesRequest.setSecretKey(secretKey);
 			tokenPropertiesRequest.setAccessToken(accessToken);
 
-			HttpEntity<TokenPropertiesRequest> requestEntity = new HttpEntity<>(tokenPropertiesRequest);
+			HttpEntity<TokenPropertiesPOJO> requestEntity = new HttpEntity<>(tokenPropertiesRequest);
 
 			logger.info("Token expiration succesfully verified using validate token API");
 			return restTemplate.exchange(apiUrl, HttpMethod.POST, requestEntity, String.class);
@@ -197,12 +194,12 @@ public class UserServiceImpl implements UserService {
 	 * @param tokenValidationRequest
 	 * @return ResponseEntity<ResponsePOJO>
 	 */
-	public ResponseEntity<ResponsePOJO> regenerateTokens(String refreshToken,TokenRegenerationRequest tokenRegenerationRequest) {
+	public ResponseEntity<ResponsePOJO> regenerateTokens(String refreshToken,TokenRegenerationRequestPOJO tokenRegenerationRequest) {
 		logger.info("Received request to regenerate the tokens");
 		ResponsePOJO responsePOJO = new ResponsePOJO();
 		try {
 			logger.info("Regenerate tokens process is started");
-			TokenPropertiesRequest tokenPropertiesRequest = new TokenPropertiesRequest();
+			TokenPropertiesPOJO tokenPropertiesRequest = new TokenPropertiesPOJO();
 			String regenerateTokenURL = "http://localhost:8083/auth/jwt/regenerateTokens";
 
 			User user = userRepository.findByUsername(tokenRegenerationRequest.getUsername().trim());
@@ -226,7 +223,7 @@ public class UserServiceImpl implements UserService {
 				tokenPropertiesRequest.setAccessTokenTime(accessTokenValidity);
 				tokenPropertiesRequest.setRefreshTokenTime(refreshTokenValidity);
 
-				HttpEntity<TokenPropertiesRequest> requestEntity = new HttpEntity<>(tokenPropertiesRequest, headers);
+				HttpEntity<TokenPropertiesPOJO> requestEntity = new HttpEntity<>(tokenPropertiesRequest, headers);
 
 				logger.info("Regenerate tokens request verified using regenerateTokens API");
 				return restTemplate.exchange(regenerateTokenURL, HttpMethod.POST, requestEntity, ResponsePOJO.class);

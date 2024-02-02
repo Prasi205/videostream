@@ -1,8 +1,8 @@
-package com.tm.videostream.request;
+package com.tm.videostream.pojo.request;
 
 import javax.validation.constraints.NotBlank;
 
-public class TokenRegenerationRequest {
+public class TokenRegenerationRequestPOJO {
 
 	@NotBlank(message =  "Username cannot be blank")
 	private String username;

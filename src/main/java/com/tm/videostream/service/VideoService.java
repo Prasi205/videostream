@@ -7,6 +7,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import com.tm.videostream.dto.VideoDTO;
+import com.tm.videostream.pojo.request.StatusUpdateRequestPOJO;
+import com.tm.videostream.pojo.request.VideoDetailsRequestPOJO;
 
 public interface VideoService {
 
@@ -14,10 +16,11 @@ public interface VideoService {
 
 	public ResponseEntity<StreamingResponseBody> streamingVideoByFileName(String filename);
 	
-	public boolean updateApprovalStatusByFileId(int fileId, String approvalStatus,String username);
+	public boolean updateApprovalStatusByFileId(StatusUpdateRequestPOJO statusUpdateRequestPOJO);
 	
-	public List<VideoDTO> fetchVideoDetails(String username, String approvalStatus, String search);
+	public List<VideoDTO> fetchVideoDetails(VideoDetailsRequestPOJO videoDetailsRequestPOJO);
 	
-	public List<VideoDTO> fetchVideoWithoutCurrentUserVideo(String approvalStatus,String username);
-
+	public List<VideoDTO> fetchVideoWithoutCurrentUserVideo(VideoDetailsRequestPOJO videoDetailsRequestPOJO);
+	
+	
 }

@@ -1,4 +1,4 @@
-package com.tm.videostream.pojo;
+package com.tm.videostream.pojo.request;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;

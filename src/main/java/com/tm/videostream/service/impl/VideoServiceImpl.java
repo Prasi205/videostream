@@ -10,6 +10,9 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+
 import org.apache.catalina.connector.ClientAbortException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +27,8 @@ import com.tm.videostream.dto.VideoDTO;
 import com.tm.videostream.entity.User;
 import com.tm.videostream.entity.Video;
 import com.tm.videostream.exception.CustomStreamException;
+import com.tm.videostream.pojo.request.StatusUpdateRequestPOJO;
+import com.tm.videostream.pojo.request.VideoDetailsRequestPOJO;
 import com.tm.videostream.repository.UserRepository;
 import com.tm.videostream.repository.VideoRepository;
 
@@ -48,6 +53,9 @@ public class VideoServiceImpl implements VideoService {
 
 	@Autowired
 	private UserRepository userRepository;
+
+	@PersistenceContext
+	private EntityManager entityManager;
 
 	/**
 	 * This method is used to save the video details in database
@@ -169,22 +177,22 @@ public class VideoServiceImpl implements VideoService {
 	 * @param approvalStatus
 	 * @return boolean
 	 */
-	public boolean updateApprovalStatusByFileId(int fileId, String approvalStatus, String username) {
+	public boolean updateApprovalStatusByFileId(StatusUpdateRequestPOJO statusUpdateRequestPOJO) {
 		logger.info("Received the request to update the video status");
 		try {
 			logger.info("Get the details based on fileId");
-			User user = userRepository.findByUsername(username.trim());
+			User user = userRepository.findByUsername(statusUpdateRequestPOJO.getUsername().trim());
 			if (user.getRoles().getRoleName().equals(RoleConstant.ADMIN_ROLE)) {
-				int rowsAffected = videoRepository.updateApprovalStatusByFileId(fileId, approvalStatus,
-						              user.getName());
+				int rowsAffected = videoRepository.updateApprovalStatusByFileId(statusUpdateRequestPOJO.getFileId(),
+						statusUpdateRequestPOJO.getApprovalStatus().trim(), user.getName());
 				if (rowsAffected > 0) {
 					logger.info("Video status is updated");
 					return true;
 				} else {
-					logger.warn("No video found with fileId: {}", fileId);
+					logger.warn("No video found with fileId: {}", statusUpdateRequestPOJO.getFileId());
 					return false;
 				}
-			}else {
+			} else {
 				logger.error("Given user does not update the approval status");
 				return false;
 			}
@@ -203,17 +211,19 @@ public class VideoServiceImpl implements VideoService {
 	 * @param username
 	 * @return List<VideoDTO>
 	 */
-	public List<VideoDTO> fetchVideoByOption(String search, String approvalStatus, String username) {
+	public List<VideoDTO> fetchVideoByOption(String search, VideoDetailsRequestPOJO videoDetailsRequestPOJO) {
 		logger.info("Received the request to fetch the video's option based");
 		try {
 			logger.info("Pass the username to find the details");
-			User user = userRepository.findByUsername(username.trim());
+			User user = userRepository.findByUsername(videoDetailsRequestPOJO.getUsername().trim());
 			List<VideoDTO> videoDTOs;
 			if (user.getRoles().getRoleName().equals(RoleConstant.ADMIN_ROLE)) {
-				videoDTOs = videoRepository.findAdminVideoByOptionANDApprovalStatus(search, approvalStatus);
+				videoDTOs = videoRepository.findAdminVideoByOptionANDApprovalStatus(search,
+						videoDetailsRequestPOJO.getApprovalStatus().trim());
 				logger.info("Fetch the video's option based on admin");
 			} else {
-				videoDTOs = videoRepository.findCustomerVideoByOptionAndApprovalStatus(username,search, approvalStatus);
+				videoDTOs = videoRepository.findCustomerVideoByOptionAndApprovalStatus(
+						videoDetailsRequestPOJO.getUsername().trim(), videoDetailsRequestPOJO.getApprovalStatus().trim());
 				logger.info("Fetch the video's option based on customer");
 			}
 			logger.info("Video's are fetched in option based");
@@ -223,7 +233,7 @@ public class VideoServiceImpl implements VideoService {
 			throw new CustomStreamException("Unable to fecth the video's in option based");
 		}
 	}
-	
+
 	/**
 	 * This method is used to fetch the video's based on user role with approval
 	 * status
@@ -232,22 +242,20 @@ public class VideoServiceImpl implements VideoService {
 	 * @param approvalStatus
 	 * @return List<VideoDTO>
 	 */
-	public List<VideoDTO> fetchVideoDetails(String search, String approvalStatus, String username) {
+	public List<VideoDTO> fetchVideoDetails(VideoDetailsRequestPOJO videoDetailsRequestPOJO) {
 		logger.info("Received the request to fetch the video's based the user role");
 		try {
 			logger.info("Pass the username to find the details");
-			User user = userRepository.findByUsername(username.trim());
+			User user = userRepository.findByUsername(videoDetailsRequestPOJO.getUsername().trim());
 			List<VideoDTO> videoDTOs;
-			if (StringUtils.hasText(search)) {
-				videoDTOs= fetchVideoByOption(search, approvalStatus, username);
-			}else {
-				if (user.getRoles().getRoleName().equals(RoleConstant.ADMIN_ROLE)) {
-					videoDTOs = videoRepository.findAdminVideoByApprovalStatus(approvalStatus);
-					logger.info("Fetch the video's based on admin");
-				} else {
-					videoDTOs = videoRepository.findCustomerVideoByApprovalStatus(approvalStatus, username);
-					logger.info("Fetch the video's based on customer");
-				}	
+			if (user.getRoles().getRoleName().equals(RoleConstant.ADMIN_ROLE)) {
+				videoDTOs = videoRepository.findAdminVideoByApprovalStatus(videoDetailsRequestPOJO.getApprovalStatus().trim());
+				logger.info("Fetch the video's based on admin");
+			} else {
+				videoDTOs = videoRepository.findCustomerVideoByApprovalStatus(
+						videoDetailsRequestPOJO.getApprovalStatus().trim(),
+						videoDetailsRequestPOJO.getUsername().trim());
+				logger.info("Fetch the video's based on customer");
 			}
 			logger.info("Video's are fetched");
 			return videoDTOs;
@@ -257,16 +265,20 @@ public class VideoServiceImpl implements VideoService {
 		}
 	}
 
-	/**This method is used to fetch the video's without current admin or customer video
+	/**
+	 * This method is used to fetch the video's without current admin or customer
+	 * video
+	 * 
 	 * @param approvalStatus
 	 * @param username
 	 * @return List<VideoDTO>
 	 */
-	public List<VideoDTO> fetchVideoWithoutCurrentUserVideo(String approvalStatus,String username){
+	public List<VideoDTO> fetchVideoWithoutCurrentUserVideo(VideoDetailsRequestPOJO videoDetailsRequestPOJO) {
 		logger.info("Received the request to fetch the video's without current admin or customer");
 		List<VideoDTO> videoDTOs;
 		try {
-			videoDTOs=videoRepository.findVideosWithoutCurrentAdminOrCustomer(approvalStatus, username);
+			videoDTOs = videoRepository.findVideosWithoutCurrentAdminOrCustomer(
+					videoDetailsRequestPOJO.getApprovalStatus().trim(), videoDetailsRequestPOJO.getUsername().trim());
 			logger.info("Video's are fetched without current user");
 		} catch (Exception e) {
 			logger.error("Unable to fecth the video details without current user");

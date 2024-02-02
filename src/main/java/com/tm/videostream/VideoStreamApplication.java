@@ -12,5 +12,5 @@ public class VideoStreamApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(VideoStreamApplication.class, args);
 	}
-
+	
 }

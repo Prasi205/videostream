@@ -1,8 +1,8 @@
-package com.tm.videostream.request;
+package com.tm.videostream.pojo.request;
 
 import javax.validation.constraints.NotBlank;
 
-public class SigninRequest {
+public class SigninRequestPOJO {
 
 	@NotBlank(message = "Username cannot be blank")
 	private String username;

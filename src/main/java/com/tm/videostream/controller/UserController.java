@@ -14,10 +14,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.tm.videostream.exception.CustomStreamException;
-import com.tm.videostream.pojo.RoleRequestPOJO;
-import com.tm.videostream.pojo.UserRequestPOJO;
-import com.tm.videostream.request.SigninRequest;
-import com.tm.videostream.request.TokenRegenerationRequest;
+import com.tm.videostream.pojo.request.RoleRequestPOJO;
+import com.tm.videostream.pojo.request.SigninRequestPOJO;
+import com.tm.videostream.pojo.request.TokenRegenerationRequestPOJO;
+import com.tm.videostream.pojo.request.UserRequestPOJO;
 import com.tm.videostream.response.ResponsePOJO;
 import com.tm.videostream.service.UserService;
 
@@ -95,7 +95,7 @@ public class UserController {
 	 * @return ResponseEntity<ResponsePOJO>
 	 */
 	@PostMapping("/signin")
-	public ResponseEntity<ResponsePOJO> signin(@RequestBody @Valid SigninRequest signinRequest) {
+	public ResponseEntity<ResponsePOJO> signin(@RequestBody @Valid SigninRequestPOJO signinRequest) {
 		logger.info("Received request to generate token");
 		ResponseEntity<ResponsePOJO> responsePojo;
 		try {
@@ -117,7 +117,7 @@ public class UserController {
 	 * @return ResponseEntity<ResponsePOJO>
 	 */
 	@PostMapping("/regenerateTokens")
-	public ResponseEntity<ResponsePOJO> regenerateTokens(@RequestBody @Valid TokenRegenerationRequest tokenValidationRequest,
+	public ResponseEntity<ResponsePOJO> regenerateTokens(@RequestBody @Valid TokenRegenerationRequestPOJO tokenValidationRequest,
 			@RequestHeader(value = "Authorization", defaultValue = "") String refreshToken) {
 		logger.info("Received the request to regenerate the Tokens");
 		ResponseEntity<ResponsePOJO> responsePOJO;

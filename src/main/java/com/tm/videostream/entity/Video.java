@@ -20,17 +20,22 @@ public class Video {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int fileId;
 
-	@NotBlank(message = "Filename cannot be blank")
-	private String filename;
-
 	@NotBlank(message = "Title cannot be blank")
 	private String title;
 
 	@NotBlank(message = "Description cannot be blank")
 	private String description;
 
+	@NotBlank(message = "Filename cannot be blank")
+	private String filename;
+	
+	@NotBlank(message = "Video Thumbnail cannot be blank")
+	private String videoThumbnail;
+	
 	private String approvalStatus;
+	
 	private float size;
+	
 	private float duration;
 	
 	@CreationTimestamp
@@ -76,6 +81,14 @@ public class Video {
 
 	public void setDescription(String description) {
 		this.description = description;
+	}
+
+	public String getVideoThumbnail() {
+		return videoThumbnail;
+	}
+
+	public void setVideoThumbnail(String videoThumbnail) {
+		this.videoThumbnail = videoThumbnail;
 	}
 
 	public String getApprovalStatus() {

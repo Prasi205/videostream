@@ -8,6 +8,7 @@ public class TokenPropertiesPOJO {
 	private int refreshTokenTime;
 	private String accessToken;
 	private String refreshToken;
+	private String roleName;
 
 	public String getUniqueId() {
 		return uniqueId;
@@ -55,6 +56,14 @@ public class TokenPropertiesPOJO {
 
 	public void setRefreshToken(String refreshToken) {
 		this.refreshToken = refreshToken;
+	}
+
+	public String getRoleName() {
+		return roleName;
+	}
+
+	public void setRoleName(String roleName) {
+		this.roleName = roleName;
 	}
 
 }

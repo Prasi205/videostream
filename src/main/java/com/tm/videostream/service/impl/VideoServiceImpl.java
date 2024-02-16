@@ -3,30 +3,41 @@ package com.tm.videostream.service.impl;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+
 import java.util.List;
 import java.util.UUID;
 
 import javax.persistence.EntityManager;
+import javax.persistence.ParameterMode;
 import javax.persistence.PersistenceContext;
+import javax.persistence.StoredProcedureQuery;
 
 import org.apache.catalina.connector.ClientAbortException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tm.videostream.constants.RoleConstant;
 import com.tm.videostream.dto.VideoDTO;
 import com.tm.videostream.entity.User;
 import com.tm.videostream.entity.Video;
 import com.tm.videostream.exception.CustomStreamException;
+import com.tm.videostream.pojo.request.FilterVideoRequest;
 import com.tm.videostream.pojo.request.StatusUpdateRequestPOJO;
 import com.tm.videostream.pojo.request.VideoDetailsRequestPOJO;
 import com.tm.videostream.repository.UserRepository;
@@ -57,6 +68,9 @@ public class VideoServiceImpl implements VideoService {
 	@PersistenceContext
 	private EntityManager entityManager;
 
+	@Autowired
+	private ObjectMapper objectMapper;
+
 	/**
 	 * This method is used to save the video details in database
 	 * 
@@ -65,7 +79,8 @@ public class VideoServiceImpl implements VideoService {
 	 * @param description
 	 * @return boolean
 	 */
-	public boolean saveVideoDetails(MultipartFile file, String title, String description, String username) {
+	public boolean saveVideoDetails(MultipartFile file, String title, String description, String username,
+			          float size, float duration, MultipartFile videoThumbnail) {
 		logger.info("Received the request to save the video details");
 		try {
 			logger.info("Gathering the video details from request");
@@ -77,30 +92,47 @@ public class VideoServiceImpl implements VideoService {
 			if (!Files.exists(directory)) {
 				Files.createDirectories(directory);
 			}
-
-			String extension = StringUtils.getFilenameExtension(file.getOriginalFilename());
+			
+			String videoExtension = StringUtils.getFilenameExtension(file.getOriginalFilename());
 
 			String uuid = UUID.randomUUID().toString();
-			String filePath = Paths.get(videoDirectory, uuid + "." + extension).toString();
+			String filePath = Paths.get(videoDirectory, uuid + "." + videoExtension).toString();
 
 			Files.copy(file.getInputStream(), Paths.get(filePath));
 
+            String thumbnailDirectory = projectDirectory +"/Thumbnail/";
+			
+			Path thumbnail = Paths.get(thumbnailDirectory);
+			if (!Files.exists(thumbnail)) {
+				Files.createDirectories(thumbnail);
+			}
+			String thumbnailExtension = StringUtils.getFilenameExtension(videoThumbnail.getOriginalFilename());
+
+			String thumbnailUuid = UUID.randomUUID().toString();
+			String thumbnailFilePath = Paths.get(thumbnailDirectory, thumbnailUuid + "." + thumbnailExtension).toString();
+
+			Files.copy(file.getInputStream(), Paths.get(thumbnailFilePath));
+			
 			User user = userRepository.findByUsername(username.trim());
 
 			Video saveVideo = new Video();
 
 			saveVideo.setTitle(title);
 			saveVideo.setDescription(description);
-			saveVideo.setFilename(uuid + "." + extension);
+			saveVideo.setFilename(uuid + "." + videoExtension);
+			saveVideo.setVideoThumbnail(thumbnailUuid+ "." + thumbnailExtension);
 			saveVideo.setApprovalStatus("NEW");
 			saveVideo.setCreatedBy(user.getName());
 			saveVideo.setUpdatedBy(user.getName());
+			saveVideo.setSize(size);
+			saveVideo.setDuration(duration);
 			saveVideo.setUser(user);
 
 			videoRepository.save(saveVideo);
 			logger.info("Video details are saved in database");
 			return true;
 		} catch (Exception e) {
+			e.printStackTrace();
 			logger.error("Unable to save the video details in database");
 			return false;
 		}
@@ -223,7 +255,8 @@ public class VideoServiceImpl implements VideoService {
 				logger.info("Fetch the video's option based on admin");
 			} else {
 				videoDTOs = videoRepository.findCustomerVideoByOptionAndApprovalStatus(
-						videoDetailsRequestPOJO.getUsername().trim(), videoDetailsRequestPOJO.getApprovalStatus().trim());
+						videoDetailsRequestPOJO.getUsername().trim(),
+						videoDetailsRequestPOJO.getApprovalStatus().trim());
 				logger.info("Fetch the video's option based on customer");
 			}
 			logger.info("Video's are fetched in option based");
@@ -249,7 +282,10 @@ public class VideoServiceImpl implements VideoService {
 			User user = userRepository.findByUsername(videoDetailsRequestPOJO.getUsername().trim());
 			List<VideoDTO> videoDTOs;
 			if (user.getRoles().getRoleName().equals(RoleConstant.ADMIN_ROLE)) {
-				videoDTOs = videoRepository.findAdminVideoByApprovalStatus(videoDetailsRequestPOJO.getApprovalStatus().trim());
+				videoDTOs = videoRepository
+						.findAdminVideoByApprovalStatus(videoDetailsRequestPOJO.getApprovalStatus().trim(),
+						      videoDetailsRequestPOJO.getLimitSize() ,
+						      videoDetailsRequestPOJO.getLimitSize()*(videoDetailsRequestPOJO.getPageNo()-1));
 				logger.info("Fetch the video's based on admin");
 			} else {
 				videoDTOs = videoRepository.findCustomerVideoByApprovalStatus(
@@ -287,4 +323,57 @@ public class VideoServiceImpl implements VideoService {
 		return videoDTOs;
 	}
 
+	/**
+	 * This method is used to fetch the video's by filter option
+	 * 
+	 * @param filterVideoRequest
+	 * @return List<VideoDTO>
+	 */
+	public List<VideoDTO> fetchFilterVideoDetails(FilterVideoRequest filterVideoRequest) {
+	    logger.info("Received the request to fetch the videos by filter");
+	    try {
+	    	
+	        StoredProcedureQuery query = entityManager.createStoredProcedureQuery("FILTER_OPTION_VIDEO");
+
+ 	        query.registerStoredProcedureParameter("userId", Integer.class, ParameterMode.IN);
+	        query.registerStoredProcedureParameter("roleName", String.class, ParameterMode.IN);
+	        query.registerStoredProcedureParameter("approvalStatus", String.class, ParameterMode.IN);
+	        query.registerStoredProcedureParameter("limitSize", Integer.class, ParameterMode.IN);
+	        query.registerStoredProcedureParameter("pageNo", Integer.class, ParameterMode.IN);
+	        query.registerStoredProcedureParameter("filterPojo", String.class, ParameterMode.IN);
+
+	        String filterPojoJson = objectMapper.writeValueAsString(filterVideoRequest.getFilterPojo());
+            
+	        query.setParameter("userId", filterVideoRequest.getUserId());
+	        query.setParameter("roleName", filterVideoRequest.getRoleName());
+	        query.setParameter("approvalStatus", filterVideoRequest.getApprovalStatus());
+	        query.setParameter("limitSize", filterVideoRequest.getLimitSize());
+	        query.setParameter("pageNo", filterVideoRequest.getLimitSize()*(filterVideoRequest.getPageNo() -1));
+	        query.setParameter("filterPojo", filterPojoJson);
+
+	        List<Object[]> resultList = query.getResultList();
+	 
+	        List<VideoDTO> videoDTOs = new ArrayList<>();
+	        for (Object[] result : resultList) {
+	            int fileId = (int) result[0];
+	            String title = String.valueOf(result[1]);
+	            String description = String.valueOf(result[2]);
+	            String filename = String.valueOf(result[3]);
+	            float duration = (float) result[4];
+	            String username = String.valueOf(result[5]);
+
+	            VideoDTO videoDTO = new VideoDTO(fileId, title, description, filename, duration, username);
+	            videoDTOs.add(videoDTO);
+	        }
+	   
+	        return videoDTOs;
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        logger.error("Unable to fetch the video details by filter");
+	        throw new CustomStreamException("Unable to fetch the video details by filter");
+	    }
+	}
+
+	
 }

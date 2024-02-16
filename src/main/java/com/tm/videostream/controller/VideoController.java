@@ -5,17 +5,22 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import com.tm.videostream.dto.VideoDTO;
 import com.tm.videostream.exception.CustomStreamException;
+import com.tm.videostream.pojo.request.FilterVideoRequest;
 import com.tm.videostream.pojo.request.StatusUpdateRequestPOJO;
 import com.tm.videostream.pojo.request.VideoDetailsRequestPOJO;
 import com.tm.videostream.response.ResponsePOJO;
@@ -44,7 +49,8 @@ public class VideoController {
 	 */
 	@PostMapping("/saveVideoDetails")
 	public ResponsePOJO saveVideoDetails(@RequestParam MultipartFile file, @RequestParam String title,
-			@RequestParam String description, @RequestParam String username) {
+			@RequestParam String description, @RequestParam String username, @RequestParam float size, 
+			@RequestParam float duration, @RequestParam MultipartFile videoThumbnail) {
 		logger.info("Received the request to save the video details");
 		ResponsePOJO responsePOJO = new ResponsePOJO();
 		try {
@@ -52,7 +58,7 @@ public class VideoController {
 			if (title.trim().isEmpty() || description.trim().isEmpty()) {
 				responsePOJO.response("Given field cannot be blank", null, false);
 			} else {
-				if (videoService.saveVideoDetails(file, title, description, username)) {
+				if (videoService.saveVideoDetails(file, title, description, username, size, duration,videoThumbnail)) {
 					logger.info("Video details are saved in database");
 					responsePOJO.response("Video details are saved in database", null, true);
 				} else {
@@ -90,8 +96,7 @@ public class VideoController {
 	/**
 	 * Handles the approval status update process based on received request
 	 * 
-	 * @param fileId
-	 * @param approvalStatus
+	 * @param statusUpdateRequestPOJO
 	 * @return ResponsePOJO
 	 */
 	@PostMapping("/updateApprovalStatus")
@@ -117,8 +122,7 @@ public class VideoController {
 	/**
 	 * Handles the video's fetch process based on received request
 	 * 
-	 * @param approvalStatus
-	 * @param username
+	 * @param videoDetailsRequestPOJO
 	 * @return List<VideoDTO>
 	 */
 	@PostMapping(value = "/fetchVideoDetails")
@@ -146,14 +150,13 @@ public class VideoController {
 	/**
 	 * Handles the users video's fetch process based on received request
 	 * 
-	 * @param approvalStatus
-	 * @param username
+	 * @param videoDetailsRequestPOJO
 	 * @return ResponsePOJO
 	 */
 	@PostMapping("/fecthUsersVideo")
 	public ResponsePOJO fetchVideoWithoutCurrentUserVideo(
 			@RequestBody VideoDetailsRequestPOJO videoDetailsRequestPOJO) {
-		logger.info("Received request to fetch the video's on role based");
+		logger.info("Received request to fetch the video's without current user");
 		ResponsePOJO responsePOJO = new ResponsePOJO();
 		try {
 			logger.info("Video fetch request is received");
@@ -173,4 +176,35 @@ public class VideoController {
 		return responsePOJO;
 	}
 
+	/**
+	 * Handles the video fetch process based on received filter option request
+	 * 
+	 * @param filterVideoRequest
+	 * @return ResponsePOJO
+	 */
+	@PostMapping("/fecthfilterVideo")
+	public ResponsePOJO fetchFilterVideoDetails(@RequestBody FilterVideoRequest filterVideoRequest) {
+		logger.info("Received request to fetch the video's on role based");
+		ResponsePOJO responsePOJO = new ResponsePOJO();
+		try {
+			logger.info("Video fetch request is received by filter option");
+			
+			List<VideoDTO> videoDTOList = videoService.fetchFilterVideoDetails(filterVideoRequest);
+		
+			if (videoDTOList.isEmpty()) {
+				logger.info("Filter option video cannot be found");
+				responsePOJO.response("Filter option video's cannot be found", null, false);
+			} else {
+				logger.info("Filter option video are fetched successfully");
+				responsePOJO.response("Filter option video are fetched successfully", videoDTOList, true);
+			}
+
+		} catch (Exception e) {
+			logger.error("Unable to fetch the filter option video details");
+			throw new CustomStreamException("Unable to fetch the filter option video details");
+		}
+		return responsePOJO;
+	}
+
+				
 }

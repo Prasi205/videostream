@@ -6,15 +6,16 @@ public class VideoDTO {
 	private String title;
 	private String description;
 	private String filename;
-	private float size;
 	private float duration;
 	private String username;
 	
-	public VideoDTO(int fileId, String title, String description, String filename, String username) {
+	public VideoDTO(int fileId, String title, String description, String filename, float duration, String username) {
+		super();
 		this.fileId = fileId;
 		this.title = title;
 		this.description = description;
 		this.filename = filename;
+		this.duration = duration;
 		this.username = username;
 	}
 
@@ -48,14 +49,6 @@ public class VideoDTO {
 
 	public void setFilename(String filename) {
 		this.filename = filename;
-	}
-
-	public float getSize() {
-		return size;
-	}
-
-	public void setSize(float size) {
-		this.size = size;
 	}
 
 	public float getDuration() {

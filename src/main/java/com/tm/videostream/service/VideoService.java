@@ -7,12 +7,14 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import com.tm.videostream.dto.VideoDTO;
+import com.tm.videostream.pojo.request.FilterVideoRequest;
 import com.tm.videostream.pojo.request.StatusUpdateRequestPOJO;
 import com.tm.videostream.pojo.request.VideoDetailsRequestPOJO;
 
 public interface VideoService {
 
-	public boolean saveVideoDetails(MultipartFile file, String title, String description,String username);
+	public boolean saveVideoDetails(MultipartFile file, String title, String description,String username,
+			            float size, float duration,MultipartFile videoThumbnail);
 
 	public ResponseEntity<StreamingResponseBody> streamingVideoByFileName(String filename);
 	
@@ -22,5 +24,6 @@ public interface VideoService {
 	
 	public List<VideoDTO> fetchVideoWithoutCurrentUserVideo(VideoDetailsRequestPOJO videoDetailsRequestPOJO);
 	
+	public List<VideoDTO> fetchFilterVideoDetails(FilterVideoRequest filterVideoRequest);
 	
 }

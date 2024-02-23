@@ -5,15 +5,11 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
@@ -154,8 +150,7 @@ public class VideoController {
 	 * @return ResponsePOJO
 	 */
 	@PostMapping("/fecthUsersVideo")
-	public ResponsePOJO fetchVideoWithoutCurrentUserVideo(
-			@RequestBody VideoDetailsRequestPOJO videoDetailsRequestPOJO) {
+	public ResponsePOJO fetchVideoWithoutCurrentUserVideo(@RequestBody VideoDetailsRequestPOJO videoDetailsRequestPOJO) {
 		logger.info("Received request to fetch the video's without current user");
 		ResponsePOJO responsePOJO = new ResponsePOJO();
 		try {

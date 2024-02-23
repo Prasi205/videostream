@@ -9,7 +9,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-
 import java.util.List;
 import java.util.UUID;
 
@@ -22,8 +21,6 @@ import org.apache.catalina.connector.ClientAbortException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -50,8 +47,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 /**
- * This class provides the implementation of the VideoService interface. It
- * contains methods to handles save video details, list the videos and streaming
+ * This class provides the implementation of the VideoService interface. 
+ * It contains methods to handles save video details, list the videos by filter option and streaming
  * the video.
  */
 @Service
@@ -77,6 +74,10 @@ public class VideoServiceImpl implements VideoService {
 	 * @param file
 	 * @param title
 	 * @param description
+	 * @param username
+	 * @param size
+	 * @param duration
+	 * @param videoThumbnail
 	 * @return boolean
 	 */
 	public boolean saveVideoDetails(MultipartFile file, String title, String description, String username,
@@ -205,8 +206,7 @@ public class VideoServiceImpl implements VideoService {
 	/**
 	 * This method is used to update the approval status by fileId
 	 * 
-	 * @param fileId
-	 * @param approvalStatus
+	 * @param statusUpdateRequestPOJO
 	 * @return boolean
 	 */
 	public boolean updateApprovalStatusByFileId(StatusUpdateRequestPOJO statusUpdateRequestPOJO) {
@@ -235,44 +235,10 @@ public class VideoServiceImpl implements VideoService {
 	}
 
 	/**
-	 * This method is used to tetch the video based on user role with options and
-	 * approval status
-	 * 
-	 * @param search
-	 * @param approvalStatus
-	 * @param username
-	 * @return List<VideoDTO>
-	 */
-	public List<VideoDTO> fetchVideoByOption(String search, VideoDetailsRequestPOJO videoDetailsRequestPOJO) {
-		logger.info("Received the request to fetch the video's option based");
-		try {
-			logger.info("Pass the username to find the details");
-			User user = userRepository.findByUsername(videoDetailsRequestPOJO.getUsername().trim());
-			List<VideoDTO> videoDTOs;
-			if (user.getRoles().getRoleName().equals(RoleConstant.ADMIN_ROLE)) {
-				videoDTOs = videoRepository.findAdminVideoByOptionANDApprovalStatus(search,
-						videoDetailsRequestPOJO.getApprovalStatus().trim());
-				logger.info("Fetch the video's option based on admin");
-			} else {
-				videoDTOs = videoRepository.findCustomerVideoByOptionAndApprovalStatus(
-						videoDetailsRequestPOJO.getUsername().trim(),
-						videoDetailsRequestPOJO.getApprovalStatus().trim());
-				logger.info("Fetch the video's option based on customer");
-			}
-			logger.info("Video's are fetched in option based");
-			return videoDTOs;
-		} catch (Exception e) {
-			logger.error("Unable to fecth the video's in option based");
-			throw new CustomStreamException("Unable to fecth the video's in option based");
-		}
-	}
-
-	/**
 	 * This method is used to fetch the video's based on user role with approval
 	 * status
 	 * 
-	 * @param username
-	 * @param approvalStatus
+	 * @param videoDetailsRequestPOJO
 	 * @return List<VideoDTO>
 	 */
 	public List<VideoDTO> fetchVideoDetails(VideoDetailsRequestPOJO videoDetailsRequestPOJO) {
@@ -281,16 +247,19 @@ public class VideoServiceImpl implements VideoService {
 			logger.info("Pass the username to find the details");
 			User user = userRepository.findByUsername(videoDetailsRequestPOJO.getUsername().trim());
 			List<VideoDTO> videoDTOs;
+			
+			Pageable pageable=PageRequest.of(videoDetailsRequestPOJO.getPageNo() -1,
+					     videoDetailsRequestPOJO.getLimitSize());
+			
 			if (user.getRoles().getRoleName().equals(RoleConstant.ADMIN_ROLE)) {
 				videoDTOs = videoRepository
 						.findAdminVideoByApprovalStatus(videoDetailsRequestPOJO.getApprovalStatus().trim(),
-						      videoDetailsRequestPOJO.getLimitSize() ,
-						      videoDetailsRequestPOJO.getLimitSize()*(videoDetailsRequestPOJO.getPageNo()-1));
+								pageable);
 				logger.info("Fetch the video's based on admin");
 			} else {
 				videoDTOs = videoRepository.findCustomerVideoByApprovalStatus(
 						videoDetailsRequestPOJO.getApprovalStatus().trim(),
-						videoDetailsRequestPOJO.getUsername().trim());
+						videoDetailsRequestPOJO.getUsername().trim(),pageable);
 				logger.info("Fetch the video's based on customer");
 			}
 			logger.info("Video's are fetched");
@@ -314,7 +283,8 @@ public class VideoServiceImpl implements VideoService {
 		List<VideoDTO> videoDTOs;
 		try {
 			videoDTOs = videoRepository.findVideosWithoutCurrentAdminOrCustomer(
-					videoDetailsRequestPOJO.getApprovalStatus().trim(), videoDetailsRequestPOJO.getUsername().trim());
+					videoDetailsRequestPOJO.getApprovalStatus().trim(),
+					videoDetailsRequestPOJO.getUsername().trim());
 			logger.info("Video's are fetched without current user");
 		} catch (Exception e) {
 			logger.error("Unable to fecth the video details without current user");
@@ -344,32 +314,39 @@ public class VideoServiceImpl implements VideoService {
 
 	        String filterPojoJson = objectMapper.writeValueAsString(filterVideoRequest.getFilterPojo());
             
-	        query.setParameter("userId", filterVideoRequest.getUserId());
-	        query.setParameter("roleName", filterVideoRequest.getRoleName());
+	        User user = userRepository.findByUniqueId(filterVideoRequest.getUniqueId());
+	        
+	        String roleName = user.getRoles().getRoleName();
+            if (roleName.startsWith("ROLE_")) {
+                roleName = roleName.substring("ROLE_".length());
+            }
+
+	        query.setParameter("userId", user.getUserId());
+	        query.setParameter("roleName", roleName);
 	        query.setParameter("approvalStatus", filterVideoRequest.getApprovalStatus());
 	        query.setParameter("limitSize", filterVideoRequest.getLimitSize());
 	        query.setParameter("pageNo", filterVideoRequest.getLimitSize()*(filterVideoRequest.getPageNo() -1));
 	        query.setParameter("filterPojo", filterPojoJson);
 
 	        List<Object[]> resultList = query.getResultList();
-	 
+	        
 	        List<VideoDTO> videoDTOs = new ArrayList<>();
 	        for (Object[] result : resultList) {
 	            int fileId = (int) result[0];
 	            String title = String.valueOf(result[1]);
 	            String description = String.valueOf(result[2]);
-	            String filename = String.valueOf(result[3]);
-	            float duration = (float) result[4];
+	            String videoThumbnail = String.valueOf(result[3]);
+	            String filename = String.valueOf(result[4]);
 	            String username = String.valueOf(result[5]);
 
-	            VideoDTO videoDTO = new VideoDTO(fileId, title, description, filename, duration, username);
+	            VideoDTO videoDTO = new VideoDTO(fileId, title, description, videoThumbnail,filename, username);
 	            videoDTOs.add(videoDTO);
 	        }
-	   
+	  
 	        return videoDTOs;
 
 	    } catch (Exception e) {
-	        e.printStackTrace();
+	    	e.printStackTrace();
 	        logger.error("Unable to fetch the video details by filter");
 	        throw new CustomStreamException("Unable to fetch the video details by filter");
 	    }

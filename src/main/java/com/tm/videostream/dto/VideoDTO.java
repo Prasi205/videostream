@@ -5,17 +5,18 @@ public class VideoDTO {
 	private int fileId;
 	private String title;
 	private String description;
+	private String videoThumbnail;
 	private String filename;
-	private float duration;
 	private String username;
 	
-	public VideoDTO(int fileId, String title, String description, String filename, float duration, String username) {
+	public VideoDTO(int fileId, String title, String description, String videoThumbnail, String filename, 
+			     String username) {
 		super();
 		this.fileId = fileId;
 		this.title = title;
 		this.description = description;
+		this.videoThumbnail=videoThumbnail;
 		this.filename = filename;
-		this.duration = duration;
 		this.username = username;
 	}
 
@@ -42,6 +43,13 @@ public class VideoDTO {
 	public void setDescription(String description) {
 		this.description = description;
 	}
+	public String getVideoThumbnail() {
+		return videoThumbnail;
+	}
+
+	public void setVideoThumbnail(String videoThumbnail) {
+		this.videoThumbnail = videoThumbnail;
+	}
 
 	public String getFilename() {
 		return filename;
@@ -49,14 +57,6 @@ public class VideoDTO {
 
 	public void setFilename(String filename) {
 		this.filename = filename;
-	}
-
-	public float getDuration() {
-		return duration;
-	}
-
-	public void setDuration(float duration) {
-		this.duration = duration;
 	}
 
 	public String getUsername() {

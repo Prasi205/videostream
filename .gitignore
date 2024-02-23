@@ -2,6 +2,7 @@ HELP.md
 target/
 Videos/
 videostream/
+Thumbnail/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
